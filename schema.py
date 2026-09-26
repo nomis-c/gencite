@@ -3,7 +3,9 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel, Field
 
-EvidenceSource = Literal["pubmed", "open_targets"]
+# Any retrieval module name (pubmed, open_targets, human_protein_atlas, ...). Kept open on purpose:
+# steps 6-9 only use id/title/text/url, so a new source needs no change downstream.
+EvidenceSource = str
 EvidenceLevel = Literal["sufficient", "limited", "none"]
 
 
