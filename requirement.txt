@@ -1,0 +1,12 @@
+# Install: pip install -r requirement.txt
+# Only direct dependencies; pip resolves their sub-dependencies automatically.
+
+# shared: data schema + .env loading
+pydantic==2.13.5
+python-dotenv==1.2.3
+
+# 1st part: MyGene.info, PubMed (NCBI E-utilities), Open Targets
+requests==2.34.2
+
+# 2nd part: LLM calls (synthesizer, verifier layer 2) via OpenAI-compatible API (DeepSeek, ...)
+openai==3.19.2
