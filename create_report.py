@@ -64,13 +64,13 @@ def gene_section(res: VerifyResult, record: GeneRecord | None) -> str:
 def build_report(results: list[VerifyResult], records: dict[str, GeneRecord]) -> str:
     lines = ["# gencite report", "", f"{date.today().isoformat()} · {len(results)} genes", "",
              f"*{DISCLAIMER}*", "",
-             "| Gene | Type | Evidence | Claims | + | ~ | - | X |", "|---|---|---|---|---|---|---|---|"]
+             "| Gene | Type | Evidence | Claims | + | ~ | - | X | ? |", "|---|---|---|---|---|---|---|---|---|"]
     for r in results:
         rec = records.get(r.gene)
         gtype = (rec.gene.gene_type or "unknown") if rec and rec.gene.found else "not resolved" if rec else "?"
         n = counts(r)
         lines.append(f"| [{r.gene}](#{r.gene.lower()}) | {gtype} | {r.evidence_level} | {len(r.claims)} | "
-                     f"{n['supported']} | {n['partial']} | {n['unsupported']} | {n['invalid_id']} |")
+                     f"{n['supported']} | {n['partial']} | {n['unsupported']} | {n['invalid_id']} | {n['unchecked']} |")
     lines += ["", "Status: `+` supported · `~` partial · `-` unsupported · `X` cited ID not in this gene's evidence"
               " · `?` not checked by the judge", ""]
     return "\n".join(lines + [gene_section(r, records.get(r.gene)) for r in results])

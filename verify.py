@@ -98,6 +98,9 @@ def main() -> None:
 
     if args.dry_run:
         for s in synths:
+            if s.gene not in records:
+                print(f"{s.gene}: no GeneRecord found in {args.records}", file=sys.stderr)
+                continue
             r = records[s.gene]
             by_id = {e.id: e for e in r.evidence}
             for c in s.claims:
