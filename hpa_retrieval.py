@@ -8,16 +8,25 @@ def retrieve_hpa_evidence(ensembl_id: str) -> list[dict]:
     """
     Retrieve Human Protein Atlas information for one human gene
     and normalize it into GenCite evidence records.
+
+    If HPA has no entry for the Ensembl ID, return an empty list
+    instead of treating the missing record as a pipeline error.
     """
 
     url = f"{HPA_BASE_URL}/{ensembl_id}.json"
 
     response = requests.get(url, timeout=15)
+
+    # A valid human Ensembl gene may simply not have an HPA entry.
+    # Treat this as "no HPA evidence available", not as an error.
+    if response.status_code == 404:
+        return []
+
     response.raise_for_status()
 
     data = response.json()
 
-    # HPA may return either one object or a single-item list
+    # HPA may return either one object or a single-item list.
     if isinstance(data, list):
         if not data:
             return []
@@ -54,9 +63,18 @@ def retrieve_hpa_evidence(ensembl_id: str) -> list[dict]:
         )
 
     if tissue_specific_ntpm:
-        tissue_parts.append(
-            f"RNA tissue-specific expression: {tissue_specific_ntpm}"
-        )
+        if isinstance(tissue_specific_ntpm, dict):
+            formatted_tissues = ", ".join(
+                f"{tissue} = {value} nTPM"
+                for tissue, value in tissue_specific_ntpm.items()
+            )
+            tissue_parts.append(
+                f"RNA tissue-specific expression: {formatted_tissues}"
+            )
+        else:
+            tissue_parts.append(
+                f"RNA tissue-specific expression: {tissue_specific_ntpm}"
+            )
 
     if tissue_parts:
         evidence.append({
