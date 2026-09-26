@@ -11,6 +11,7 @@ Output mirrors a cli.py run (synth/, records/, verified/), so evaluate.py reads 
 
 import argparse
 import re
+import shutil
 import sys
 from pathlib import Path
 
@@ -37,6 +38,7 @@ Output JSON only:
 {"evidence_level": "sufficient|limited|none", "note": "...", "claims": [{"text": "...", "evidence_ids": ["PMID:123"]}]}"""
 
 PMID = re.compile(r"PMID:(\d+)$")
+STAGES = ("synth", "records", "verified")
 
 
 def build_prompt(symbol: str) -> str:
@@ -81,6 +83,8 @@ def main() -> None:
             print(f"===== {s} =====\n{build_prompt(s)}")
         return
     out = args.out or Path("results") / args.genes.stem / "baseline"
+    for stage in STAGES:  # drop the last run, so a gene that fails now is missing instead of stale
+        shutil.rmtree(out / stage, ignore_errors=True)
 
     failed = unjudged = 0
     for i, symbol in enumerate(symbols, 1):
@@ -92,9 +96,8 @@ def main() -> None:
             print(f"[{i}/{len(symbols)}] {symbol}: failed - {err}", file=sys.stderr)
             failed += 1
             continue
-        _save(out / "synth", symbol, synth)
-        _save(out / "records", symbol, record)
-        _save(out / "verified", symbol, res)
+        for stage, obj in zip(STAGES, (synth, record, res)):
+            _save(out / stage, symbol, obj)
         unjudged += judge_failures(res)
         fake = sum(c.verdict == "invalid_id" for c in res.claims)
         print(f"[{i}/{len(symbols)}] {symbol}: {res.evidence_level}, {len(res.claims)} claims, "
