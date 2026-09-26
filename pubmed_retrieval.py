@@ -191,9 +191,14 @@ def fetch_pubmed_records(
 
     records = []
 
-    for article in root.findall(
-        ".//PubmedArticle"
-    ):
+    # Journal articles and book chapters such as GeneReviews
+    # both carry PubMed IDs and are useful gene evidence.
+    articles = (
+            root.findall(".//PubmedArticle")
+            + root.findall(".//PubmedBookArticle")
+    )
+
+    for article in articles:
         pmid = article.findtext(".//PMID")
 
         if not pmid:
@@ -202,6 +207,13 @@ def fetch_pubmed_records(
         title_element = article.find(
             ".//ArticleTitle"
         )
+
+        # Some PubMed book records may expose a book title
+        # instead of an article/chapter title.
+        if title_element is None:
+            title_element = article.find(
+                ".//BookTitle"
+            )
 
         title = (
             "".join(title_element.itertext())
