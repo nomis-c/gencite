@@ -49,6 +49,7 @@ Python packages (`requirement.txt`):
 | `openai` | LLM calls (any OpenAI-compatible endpoint) |
 | `pydantic` | data schemas and validation of the LLM output |
 | `python-dotenv` | reading the configuration from `.env` |
+| `streamlit` | web interface (`streamlit_app.py`) |
 
 ## Installation
 
@@ -91,6 +92,14 @@ python cli.py test_data/gene_list.txt
 Then open `results/gene_list/report.md` (e.g. in the PyCharm or VS Code Markdown preview).
 
 Your own list is a text file with one gene symbol per line. A header line such as `Gene` or `Symbol` is detected and skipped.
+
+### Web interface
+
+```bash
+streamlit run streamlit_app.py
+```
+
+Then open http://localhost:8501. Upload a `.txt` gene list, choose the evidence sources (PubMed, Open Targets, Human Protein Atlas, AMASS) and click **Analyse genes**. Each gene is shown as a card with its claims, their status, the verifier's reason and links to the sources; the Markdown report can be downloaded. Without `LLM_API_KEY` the app still resolves the genes and shows the retrieved evidence, but writes no claims.
 
 ### Commands
 
@@ -165,6 +174,7 @@ Clean up after testing: `rm -rf results/ data/cache/`.
 
 ```
 cli.py                 entry point: whole pipeline
+streamlit_app.py       web interface: upload a gene list, choose sources, view and download the report
 inputs.py              gene list parsing
 ids.py                 gene ID + gene type (MyGene.info)
 pubmed_retrieval.py    PubMed search + abstracts
