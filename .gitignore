@@ -1,7 +1,10 @@
-ablage/
-
 .env
 .venv/
 output/
 __pycache__/
 data/
+.idea/
+.env
+__pycache__/
+*.pyc
+.venv/
