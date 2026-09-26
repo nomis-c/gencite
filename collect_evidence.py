@@ -39,7 +39,11 @@ def collect_evidence(
         "gene": gene_info,
         "evidence": [],
         "errors": [],
-        "source_counts": {},
+        "source_counts": {
+            "pubmed": 0,
+            "open_targets": 0,
+        },
+        "evidence_count": 0,
     }
 
     # If the gene could not be resolved, there is nothing useful to query.
@@ -52,6 +56,7 @@ def collect_evidence(
 
     gene_symbol = gene_info.get("symbol")
     ensembl_id = gene_info.get("ensembl_id")
+
 
     # -------------------------
     # PubMed evidence
@@ -101,13 +106,12 @@ def collect_evidence(
             "message": "No Ensembl ID available for this gene.",
         })
 
+
     # -------------------------
     # Final cleanup
     # -------------------------
     record["evidence"] = _deduplicate_evidence(record["evidence"])
-
     record["evidence_count"] = len(record["evidence"])
-
     return record
 
 
