@@ -1,12 +1,15 @@
 """Command line entry point: gene list -> evidence -> claims -> verification -> report.
 
-    python3 cli.py gene_list.txt          # full pipeline (steps 1-9)
-    python3 cli.py test_data              # folder of GeneRecord JSONs: skip steps 1-5
-    python3 cli.py gene_list.txt --no-judge
+    python cli.py test_data/gene_list.txt          # full pipeline -> results/gene_list/
+    python cli.py test_data/dummy_records          # folder of GeneRecord JSONs: no retrieval -> results/dummy_records/
+    python cli.py test_data/gene_list.txt --no-judge
+
+Each run writes to its own folder (results/<input name>/ or --out) and clears that folder's old results first.
 """
 
 
 import argparse
+import shutil
 import sys
 from pathlib import Path
 
@@ -53,10 +56,23 @@ def _save(folder: Path, name: str, obj) -> None:
     (folder / f"{name}.json").write_text(obj.model_dump_json(indent=2), encoding="utf-8")
 
 
+STAGE_OUTPUTS = ("records", "synth", "verified", "report.md")
+
+
+def clear_run_folder(out: Path, keep: Path) -> None:
+    """Delete the results of an earlier run in this folder, so old genes do not mix with new ones.
+    Only the pipeline's own files are touched, and never the input folder."""
+    for name in STAGE_OUTPUTS:
+        p = out / name
+        if not p.exists() or p.resolve() == keep.resolve():
+            continue
+        shutil.rmtree(p) if p.is_dir() else p.unlink()
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description="gencite: cited, verified gene summaries from a gene list")
     ap.add_argument("input", type=Path, help="gene list (one symbol per line) or folder of GeneRecord JSONs")
-    ap.add_argument("--out", type=Path, default=Path("output/run"), help="output folder (default: output/run)")
+    ap.add_argument("--out", type=Path, help="output folder (default: results/<input name>)")
     ap.add_argument("--no-judge", action="store_true", help="skip verifier layer 2 (fewer LLM calls)")
     ap.add_argument("--no-cache", action="store_true", help="always call the APIs and the LLM (nothing read or written)")
     args = ap.parse_args()
@@ -64,10 +80,14 @@ def main() -> None:
 
     if not args.input.exists():
         sys.exit(f"Input not found: {args.input}")
+    args.out = args.out or Path("results") / args.input.stem
     if args.input.is_dir():
         records = load_records([args.input])
+        print(f"{len(records)} GeneRecords from {args.input}/ (no retrieval) -> {args.out}/")
+        clear_run_folder(args.out, keep=args.input)
     else:
         records = fetch_records(args.input)
+        clear_run_folder(args.out, keep=args.input)
         for r in records:
             _save(args.out / "records", r.gene.symbol, r)
     if not records:

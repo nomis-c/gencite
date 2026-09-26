@@ -87,7 +87,7 @@ Run the whole pipeline on the example list (15 genes, about 3–4 minutes on the
 python cli.py test_data/gene_list.txt
 ```
 
-Then open `output/run/report.md` (e.g. in the PyCharm or VS Code Markdown preview).
+Then open `results/gene_list/report.md` (e.g. in the PyCharm or VS Code Markdown preview).
 
 Your own list is a text file with one gene symbol per line. A header line such as `Gene` or `Symbol` is detected and skipped.
 
@@ -95,15 +95,16 @@ Your own list is a text file with one gene symbol per line. A header line such a
 
 | Command | What it does |
 |---|---|
-| `python cli.py <genes.txt>` | whole pipeline, gene list → report |
-| `python cli.py <genes.txt> --out output/my_run` | write to another folder (default `output/run`) |
+| `python cli.py <genes.txt>` | whole pipeline, gene list → report, results in `results/<list name>/` |
+| `python cli.py <genes.txt> --out results/my_run` | write to another folder |
 | `python cli.py <genes.txt> --no-judge` | skip verifier 2 (judge), claims get `?`, fewer LLM calls |
 | `python cli.py <genes.txt> --no-cache` | ask the LLM again instead of using cached answers |
-| `python cli.py <records folder>` | synthesizer → report on saved evidence (no retrieval), e.g. `output/run/records` or `test_data` |
+| `python cli.py <records folder>` | synthesizer → report on saved evidence (no retrieval), e.g. `results/gene_list/records` |
 | `python cli.py --help` | all options |
-| `python cache.py` / `python cache.py --clear` | show / delete the LLM cache in `data/cache/` |
+| `python clean.py` | delete all results, the LLM cache and Python bytecode (`--keep-cache`, `--dry-run`) |
+| `python cache.py` / `python cache.py --clear` | show / delete only the LLM cache in `data/cache/` |
 
-Single steps, e.g. to look at the prompts or rerun one stage:
+Single steps, e.g. to look at the prompts or rerun one stage (default output: `results/steps/`):
 
 | Step | Command |
 |---|---|
@@ -115,11 +116,13 @@ Single steps, e.g. to look at the prompts or rerun one stage:
 
 ### Output
 
-`output/run/`:
+Everything the pipeline generates goes to `results/`. Each run gets its own folder, named after the input (`results/gene_list/` for `test_data/gene_list.txt`). A new run of the same input first deletes the old results in that folder, so genes from different runs never mix.
+
+`results/<name>/`:
 
 | Path | Content |
 |---|---|
-| `records/` | retrieved evidence per gene (JSON) |
+| `records/` | retrieved evidence per gene (JSON), only when the input is a gene list |
 | `synth/` | claims with the cited evidence IDs (JSON) |
 | `verified/` | claims with status and the judge's reason (JSON) |
 | `report.md` | summary table and one section per gene: gene type, Ensembl link, evidence level, claims with status, source links, and all retrieved evidence marked "cited" or "not cited" |
@@ -138,13 +141,22 @@ Exit code 1 means some genes or claims failed, usually because of an LLM rate li
 
 ## Testing
 
-`test_data/` holds hand-written evidence for 6 genes with made-up PMIDs, including traps (a readthrough whose evidence is about its partner gene, a pseudogene, an unresolved symbol), and `test_data/synth_bad/` holds deliberately wrong claims for the verifier. This runs synthesizer → report without any retrieval:
+`test_data/` is the test data set:
 
-```bash
-python cli.py test_data --out output/run_testdata
-```
+| Path | Content | Used by |
+|---|---|---|
+| `test_data/gene_list.txt` | 15 real genes | whole pipeline with live retrieval: `python cli.py test_data/gene_list.txt` |
+| `test_data/dummy_records/` | hand-written evidence for 6 genes with made-up PMIDs, incl. traps (a readthrough whose evidence is about its partner gene, a pseudogene, an unresolved symbol) | synthesizer → report without retrieval: `python cli.py test_data/dummy_records` |
+| `test_data/synth_bad/` | deliberately wrong claims | verifier test: `python verify.py test_data/synth_bad test_data/dummy_records` |
 
 `test.md` lists manual checks for every part with the expected output, including a full end-to-end run (section "End-to-end run").
+
+Clean up after testing:
+
+```bash
+python clean.py               # results/, LLM cache, __pycache__/
+python clean.py --keep-cache  # keep the cache so the next run is fast and free
+```
 
 ## Project structure
 
@@ -155,6 +167,7 @@ ids.py                 gene ID + gene type (MyGene.info)
 pubmed_retrieval.py    PubMed search + abstracts
 opentargets.py         Open Targets biotype + disease associations
 hpa_retrieval.py       Human Protein Atlas expression + annotation
+amass_retrieval.py     AMASS GeneCore gene/protein summaries + BiomedCore literature
 collect_evidence.py    evidence record per gene (all sources)
 synth_LLM.py           synthesizer (LLM)
 verify.py              verifier 1 (ID check) + verifier 2 (LLM judge)
@@ -162,8 +175,10 @@ create_report.py       gene report (Markdown)
 schema.py              data shapes shared by all steps (pydantic)
 llm_client.py          LLM calls: config from .env, retries, JSON validation, cache
 cache.py               disk cache in data/cache/
-test_data/             dummy evidence, example gene list, wrong claims for the verifier
+clean.py               delete results, cache and bytecode
+test_data/             test data set: gene list, dummy evidence, wrong claims
 test.md                manual test checklist
+results/               everything the pipeline generates (git-ignored)
 ```
 
 ## Known limitations

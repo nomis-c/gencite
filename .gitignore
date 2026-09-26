@@ -2,6 +2,7 @@ tmp/
 .idea/
 .env
 .venv/
+results/
 output/
 data/
 __pycache__/

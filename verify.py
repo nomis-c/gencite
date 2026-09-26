@@ -87,7 +87,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(description="Verifier: layer 1 (cited IDs exist) + layer 2 (LLM judge)")
     ap.add_argument("synth", type=Path, help="folder with SynthResult JSONs")
     ap.add_argument("records", type=Path, help="folder with the matching GeneRecord JSONs")
-    ap.add_argument("--out", type=Path, default=Path("output/verified"))
+    ap.add_argument("--out", type=Path, default=Path("results/steps/verified"))
     ap.add_argument("--no-llm", action="store_true", help="run layer 1 only")
     ap.add_argument("--dry-run", action="store_true", help="print judge prompts, do not call the LLM")
     args = ap.parse_args()
