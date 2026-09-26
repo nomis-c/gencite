@@ -269,13 +269,25 @@ def run_analysis(
             ),
         )
 
+        # Start with the uploaded symbol.
+        # Once resolution succeeds, this is replaced by the
+        # canonical human gene symbol returned by MyGene.
+        resolved_symbol = symbol
+
         try:
             gene_info = resolve_gene_id(
                 symbol
             )
 
-            gene_names[symbol] = (
-                gene_info.get("name")
+            resolved_symbol = (
+                gene_info.get("symbol")
+                or symbol
+            )
+
+            gene_names[
+                resolved_symbol
+            ] = gene_info.get(
+                "name"
             )
 
             raw = collect_evidence(
@@ -295,10 +307,14 @@ def run_analysis(
             )
 
             if errors:
-                source_errors[symbol] = errors
+                source_errors[
+                    resolved_symbol
+                ] = errors
 
         except Exception as exc:
-            pipeline_errors[symbol] = [
+            pipeline_errors[
+                resolved_symbol
+            ] = [
                 (
                     "Retrieval failed: "
                     f"{type(exc).__name__}: "
@@ -323,7 +339,7 @@ def run_analysis(
                 (index - 0.45) / total,
                 text=(
                     f"Synthesizing and verifying "
-                    f"{symbol}..."
+                    f"{resolved_symbol}..."
                 ),
             )
 
@@ -339,12 +355,12 @@ def run_analysis(
                 )
 
                 verified_by_gene[
-                    symbol
+                    resolved_symbol
                 ] = verified
 
             except Exception as exc:
                 pipeline_errors.setdefault(
-                    symbol,
+                    resolved_symbol,
                     [],
                 ).append(
                     (
@@ -403,7 +419,9 @@ def render_claims(
         )
         return
 
-    st.markdown("#### Evidence-grounded claims")
+    st.markdown(
+        "#### Evidence-grounded claims"
+    )
 
     for claim_number, claim in enumerate(
         verified.claims,
@@ -637,7 +655,9 @@ def render_gene_result(
         if count_text:
             st.caption(
                 "Evidence by source · "
-                + " · ".join(count_text)
+                + " · ".join(
+                    count_text
+                )
             )
 
         if verified:
@@ -988,6 +1008,24 @@ if analysis:
             "No genes were successfully "
             "processed."
         )
+
+        # If every retrieval failed, show the captured exceptions
+        # instead of hiding them behind the record-dependent UI.
+        if analysis[
+            "pipeline_errors"
+        ]:
+            with st.expander(
+                "Error details"
+            ):
+                for symbol, errors in (
+                    analysis[
+                        "pipeline_errors"
+                    ].items()
+                ):
+                    for error in errors:
+                        st.error(
+                            f"{symbol}: {error}"
+                        )
 
     else:
         total_evidence = sum(
