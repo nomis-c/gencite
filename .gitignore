@@ -8,5 +8,4 @@ data/
 __pycache__/
 *.pyc
 test.md
-test_data/
 docs/

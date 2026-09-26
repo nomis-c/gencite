@@ -1,0 +1,39 @@
+{
+  "gene": {
+    "symbol": "SPG7",
+    "ensembl_id": "ENSG00000197912",
+    "entrez_id": "6687",
+    "gene_type": "protein-coding",
+    "found": true
+  },
+  "evidence": [
+    {
+      "id": "PMID:90000011",
+      "source": "pubmed",
+      "title": "Biallelic SPG7 variants in a cohort of patients with hereditary spastic paraplegia and ataxia",
+      "text": "We sequenced 312 patients with unexplained spastic ataxia. Biallelic pathogenic variants in SPG7 were found in 18 patients (5.8%). Most patients had adult-onset lower-limb spasticity with cerebellar ataxia. These findings confirm SPG7 as a common cause of autosomal recessive spastic ataxia.",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/90000011/"
+    },
+    {
+      "id": "PMID:90000012",
+      "source": "pubmed",
+      "title": "Paraplegin degrades EMRE to control mitochondrial calcium uptake",
+      "text": "SPG7 encodes paraplegin, a subunit of the m-AAA protease in the inner mitochondrial membrane. In cultured neurons, loss of SPG7 led to accumulation of the uniporter subunit EMRE and increased mitochondrial calcium uptake, which sensitised neurons to calcium overload.",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/90000012/"
+    },
+    {
+      "id": "OT:function:SPG7",
+      "source": "open_targets",
+      "title": "Gene function",
+      "text": "Catalytic component of the m-AAA protease, a protease that plays a key role in proteostasis of inner mitochondrial membrane proteins, and which is essential for axonal and neuron development.",
+      "url": "https://platform.opentargets.org/target/ENSG00000197912"
+    },
+    {
+      "id": "OT:disease:SPG7:MONDO_0011803",
+      "source": "open_targets",
+      "title": "Disease association",
+      "text": "SPG7 is associated with hereditary spastic paraplegia 7 in Open Targets (overall association score 0.88; supported by ClinVar, Orphanet and Genomics England evidence).",
+      "url": "https://platform.opentargets.org/evidence/ENSG00000197912/MONDO_0011803"
+    }
+  ]
+}

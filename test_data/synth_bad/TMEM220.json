@@ -1,0 +1,13 @@
+{
+  "gene": "TMEM220",
+  "evidence_level": "limited",
+  "note": "",
+  "claims": [
+    {
+      "text": "TMEM220 is a validated biomarker for hepatocellular carcinoma.",
+      "evidence_ids": [
+        "PMID:90000021"
+      ]
+    }
+  ]
+}

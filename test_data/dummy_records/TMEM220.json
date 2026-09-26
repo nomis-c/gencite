@@ -1,0 +1,25 @@
+{
+  "gene": {
+    "symbol": "TMEM220",
+    "ensembl_id": "ENSG00000187824",
+    "entrez_id": "388335",
+    "gene_type": "protein-coding",
+    "found": true
+  },
+  "evidence": [
+    {
+      "id": "PMID:90000021",
+      "source": "pubmed",
+      "title": "Transcriptome profiling of hepatocellular carcinoma identifies 214 differentially expressed genes",
+      "text": "RNA sequencing of 40 tumour/normal pairs identified 214 differentially expressed genes, including ALB, APOA1, CYP3A4, TMEM220 and SERPINA1. Pathway analysis highlighted metabolic and complement pathways. No individual gene was functionally validated.",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/90000021/"
+    },
+    {
+      "id": "OT:function:TMEM220",
+      "source": "open_targets",
+      "title": "Gene function",
+      "text": "Predicted to be located in membrane. Multi-pass membrane protein; no experimentally characterised function.",
+      "url": "https://platform.opentargets.org/target/ENSG00000187824"
+    }
+  ]
+}

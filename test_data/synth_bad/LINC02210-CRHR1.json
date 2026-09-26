@@ -1,0 +1,19 @@
+{
+  "gene": "LINC02210-CRHR1",
+  "evidence_level": "limited",
+  "note": "",
+  "claims": [
+    {
+      "text": "LINC02210-CRHR1 antagonists reduce anxiety-like behaviour in rats.",
+      "evidence_ids": [
+        "PMID:90000031"
+      ]
+    },
+    {
+      "text": "LINC02210-CRHR1 is the causal gene for Parkinson's disease risk at 17q21.31.",
+      "evidence_ids": [
+        "PMID:90000032"
+      ]
+    }
+  ]
+}

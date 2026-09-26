@@ -1,0 +1,53 @@
+{
+  "gene": {
+    "symbol": "IRGM",
+    "ensembl_id": "ENSG00000237693",
+    "entrez_id": "345611",
+    "gene_type": "protein-coding",
+    "found": true
+  },
+  "evidence": [
+    {
+      "id": "PMID:90000001",
+      "source": "pubmed",
+      "title": "IRGM promotes autophagic clearance of intracellular mycobacteria in human macrophages",
+      "text": "Autophagy is a key defence against intracellular bacteria. Here we show that knockdown of IRGM in human macrophages reduced autophagosome formation and impaired killing of Mycobacterium tuberculosis. IRGM interacted with ULK1 and BECN1 and promoted their co-assembly, suggesting that IRGM acts as an adaptor for the core autophagy machinery.",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/90000001/"
+    },
+    {
+      "id": "PMID:90000002",
+      "source": "pubmed",
+      "title": "A deletion polymorphism upstream of IRGM is associated with Crohn's disease",
+      "text": "In a case-control study of 2,400 individuals of European ancestry, a 20 kb deletion upstream of IRGM was associated with increased risk of Crohn's disease (OR 1.35). The deletion altered IRGM expression in intestinal epithelial cells. Functional consequences for disease pathogenesis remain to be determined.",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/90000002/"
+    },
+    {
+      "id": "PMID:90000003",
+      "source": "pubmed",
+      "title": "Irgm1 deficiency in mice causes excessive interferon signalling",
+      "text": "Mice lacking Irgm1, the murine orthologue of human IRGM, showed accumulation of damaged mitochondria and elevated type I interferon responses. Restoring mitophagy reduced the inflammatory phenotype. These results suggest a role for Irgm1 in limiting inflammation through mitophagy in mice.",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/90000003/"
+    },
+    {
+      "id": "OT:function:IRGM",
+      "source": "open_targets",
+      "title": "Gene function",
+      "text": "Immunity-related GTPase that plays important roles in innate immunity and inflammatory response. Regulates selective autophagy, including xenophagy and mitophagy, and acts as a negative regulator of the NLRP3 inflammasome.",
+      "url": "https://platform.opentargets.org/target/ENSG00000237693"
+    },
+    {
+      "id": "OT:disease:IRGM:MONDO_0005011",
+      "source": "open_targets",
+      "title": "Disease association",
+      "text": "IRGM is associated with Crohn disease in Open Targets (overall association score 0.62; supported mainly by GWAS evidence).",
+      "url": "https://platform.opentargets.org/evidence/ENSG00000237693/MONDO_0005011"
+    },
+    {
+      "id": "OT:disease:IRGM:MONDO_0018076",
+      "source": "open_targets",
+      "title": "Disease association",
+      "text": "IRGM is associated with tuberculosis in Open Targets (overall association score 0.31; supported by genetic association and literature evidence).",
+      "url": "https://platform.opentargets.org/evidence/ENSG00000237693/MONDO_0018076"
+    }
+  ]
+}

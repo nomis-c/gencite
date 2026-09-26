@@ -1,0 +1,10 @@
+{
+  "gene": {
+    "symbol": "ABCXYZ",
+    "ensembl_id": null,
+    "entrez_id": null,
+    "gene_type": null,
+    "found": false
+  },
+  "evidence": []
+}
