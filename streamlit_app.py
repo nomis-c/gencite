@@ -7,16 +7,16 @@ load_dotenv()
 
 import streamlit as st
 
-from collect_evidence import (
+from gencite.collect_evidence import (
     DEFAULT_EVIDENCE_SOURCES,
     collect_evidence,
 )
-from create_report import build_report
-from ids import resolve_gene_id
-from inputs import parse_gene_list
-from schema import GeneRecord
-from synth_LLM import synthesize
-from verify import JUDGE_FAILED, verify
+from gencite.create_report import build_report
+from gencite.ids import resolve_gene_id
+from gencite.inputs import parse_gene_list
+from gencite.schema import GeneRecord
+from gencite.synth_LLM import synthesize
+from gencite.verify import JUDGE_FAILED, verify
 
 
 # ---------------------------------------------------------

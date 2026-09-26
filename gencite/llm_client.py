@@ -11,7 +11,7 @@ import time
 from dotenv import load_dotenv
 from pydantic import BaseModel, ValidationError
 
-import cache
+from gencite import cache
 
 load_dotenv()
 

@@ -1,7 +1,7 @@
 """Baseline: the same LLM without retrieval. It writes claims from memory and cites PMIDs it remembers.
 
-    python baseline.py test_data/eval_genes.txt            # -> results/eval_genes/baseline/
-    python baseline.py test_data/eval_genes.txt --no-judge
+    python -m gencite.baseline test_data/eval_genes.txt            # -> results/eval_genes/baseline/
+    python -m gencite.baseline test_data/eval_genes.txt --no-judge
 
 The cited PMIDs are fetched from PubMed and become the gene's evidence, then the unchanged verifier runs:
 layer 1 marks PMIDs that do not exist as invalid_id, layer 2 judges the real ones with the same judge as gencite.
@@ -15,13 +15,13 @@ import shutil
 import sys
 from pathlib import Path
 
-import cache
-from inputs import parse_gene_list
-from llm_client import llm_json
-from pubmed_retrieval import fetch_pubmed_records
-from schema import GeneInfo, GeneRecord, SynthResult
-from synth_LLM import LLMOutput
-from verify import judge_failures, verify
+from gencite import cache
+from gencite.inputs import parse_gene_list
+from gencite.llm_client import llm_json
+from gencite.pubmed_retrieval import fetch_pubmed_records
+from gencite.schema import GeneInfo, GeneRecord, SynthResult
+from gencite.synth_LLM import LLMOutput
+from gencite.verify import judge_failures, verify
 
 SYSTEM = """You summarise the biology of one human gene for a scientist.
 Write up to 5 short claims on the gene's function and disease relevance, from your own knowledge.

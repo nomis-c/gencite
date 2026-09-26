@@ -8,9 +8,9 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-from llm_client import llm_json
-from schema import Claim, ClaimCheck, Evidence, GeneRecord, SynthResult, VerifyResult
-from synth_LLM import load_records
+from gencite.llm_client import llm_json
+from gencite.schema import Claim, ClaimCheck, Evidence, GeneRecord, SynthResult, VerifyResult
+from gencite.synth_LLM import load_records
 
 SYSTEM = """You check one claim about a human gene against the evidence it cites.
 Judge ONLY from the given evidence text. Ignore your own background knowledge, even if the claim is true in general.

@@ -3,7 +3,7 @@
 Each request is hashed and stored as data/cache/<kind>_<hash>.json (request + value, readable).
 Only successful results are stored, so errors and invalid LLM output are retried on the next run.
 API keys are never part of the hash or the file.
-Turn off with GENCITE_NO_CACHE=1 or `cli.py --no-cache`. `python cache.py` shows stats, `--clear` deletes it.
+Turn off with GENCITE_NO_CACHE=1 or `python -m gencite --no-cache`. `python -m gencite.cache` shows stats, `--clear` deletes it.
 """
 import hashlib
 import json
@@ -13,7 +13,7 @@ from pathlib import Path
 
 import requests
 
-CACHE_DIR = Path(__file__).parent / "data" / "cache"
+CACHE_DIR = Path(__file__).parent.parent / "data" / "cache"  # repo root, next to results/
 ENABLED = os.getenv("GENCITE_NO_CACHE") != "1"
 SECRET_PARAMS = {"api_key", "apikey", "key", "token"}
 stats = {"hits": 0, "misses": 0}

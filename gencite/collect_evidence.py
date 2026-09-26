@@ -1,7 +1,7 @@
-from pubmed_retrieval import retrieve_pubmed_evidence
-from opentargets import retrieve_open_targets_evidence
-from hpa_retrieval import retrieve_hpa_evidence
-from amass_retrieval import retrieve_amass_evidence
+from gencite.pubmed_retrieval import retrieve_pubmed_evidence
+from gencite.opentargets import retrieve_open_targets_evidence
+from gencite.hpa_retrieval import retrieve_hpa_evidence
+from gencite.amass_retrieval import retrieve_amass_evidence
 
 
 DEFAULT_EVIDENCE_SOURCES = frozenset({"pubmed", "open_targets", "human_protein_atlas", "amass"})

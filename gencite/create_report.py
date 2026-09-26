@@ -6,8 +6,8 @@ import sys
 from datetime import date
 from pathlib import Path
 
-from schema import GeneRecord, VerifyResult
-from synth_LLM import load_records
+from gencite.schema import GeneRecord, VerifyResult
+from gencite.synth_LLM import load_records
 
 MARK = {"supported": "+", "partial": "~", "unsupported": "-", "invalid_id": "X", "unchecked": "?"}
 ORDER = ["supported", "partial", "unsupported", "invalid_id", "unchecked"]
