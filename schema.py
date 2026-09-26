@@ -44,3 +44,22 @@ class SynthResult(BaseModel):
     evidence_level: EvidenceLevel
     note: str = ""  # why evidence is limited/none, e.g. "gene not resolved"
     claims: list[Claim] = Field(default_factory=list)
+
+
+Verdict = Literal["supported", "partial", "unsupported", "invalid_id", "unchecked"]  # unchecked = layer 2 skipped
+
+
+class ClaimCheck(BaseModel):
+    text: str
+    evidence_ids: list[str]
+    invalid_ids: list[str] = Field(default_factory=list)  # layer 1: cited IDs not in this gene's evidence
+    verdict: Verdict
+    reason: str = ""  # layer 2: one-line judge reason
+
+
+class VerifyResult(BaseModel):
+    """Output of verify.py, input of create_report.py."""
+    gene: str
+    evidence_level: EvidenceLevel
+    note: str = ""
+    claims: list[ClaimCheck] = Field(default_factory=list)
