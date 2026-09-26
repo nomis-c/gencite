@@ -256,6 +256,8 @@ def run_analysis(
 
     total = len(genes)
 
+    seen_resolved_symbols = set()
+
     for index, symbol in enumerate(
         genes,
         start=1,
@@ -280,8 +282,23 @@ def run_analysis(
             )
 
             resolved_symbol = (
-                gene_info.get("symbol")
-                or symbol
+                    gene_info.get("symbol")
+                    or symbol
+            )
+
+            if resolved_symbol in seen_resolved_symbols:
+                progress.progress(
+                    index / total,
+                    text=(
+                        f"Skipped duplicate "
+                        f"{resolved_symbol} "
+                        f"({index}/{total})"
+                    ),
+                )
+                continue
+
+            seen_resolved_symbols.add(
+                resolved_symbol
             )
 
             gene_names[
