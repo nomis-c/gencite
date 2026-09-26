@@ -7,7 +7,7 @@ Almost every omics analysis ends with a gene list that someone has to interpret:
 
 ## Goal
 
-gencite does the lookup and a first written summary for every gene, and makes each statement checkable:
+`gencite` does the lookup and a first written summary for every gene, and makes each statement checkable:
 
 - **Every claim cites evidence.** The LLM may only use the retrieved evidence, and every claim names the PubMed, Open Targets or Human Protein Atlas record it is based on.
 - **Every citation is checked in code.** A claim that cites an ID not retrieved for that gene is flagged (`invalid_id`).
@@ -64,7 +64,7 @@ pip install -r requirement.txt
 
 There is no config file. Settings live in two places:
 
-- **`.env`** for the LLM endpoint, model and key (per machine, never committed)
+- **`.env`** for the LLM endpoint, model and API keys (per machine, never committed)
 - **command-line flags** for everything that changes per run (see [Usage](#usage))
 
 ```bash
@@ -77,6 +77,7 @@ cp .env.example .env               # then fill in LLM_API_KEY
 | `LLM_MODEL` | no (default `deepseek-chat`) | model for the synthesizer |
 | `LLM_API_KEY` | **yes** | API key |
 | `JUDGE_BASE_URL`, `JUDGE_MODEL`, `JUDGE_API_KEY` | no | a different model as judge; each empty value falls back to `LLM_*` |
+| `AMASS_API_KEY` | no | AMASS GeneCore + BiomedCore evidence; without it the AMASS source is skipped |
 | `GENCITE_NO_CACHE` | no | `1` turns the cache off (same as `--no-cache`) |
 
 ## Usage
@@ -149,8 +150,6 @@ Exit code 1 means some genes or claims failed, usually because of an LLM rate li
 | `test_data/dummy_records/` | hand-written evidence for 6 genes with made-up PMIDs, incl. traps (a readthrough whose evidence is about its partner gene, a pseudogene, an unresolved symbol) | synthesizer → report without retrieval: `python cli.py test_data/dummy_records` |
 | `test_data/synth_bad/` | deliberately wrong claims | verifier test: `python verify.py test_data/synth_bad test_data/dummy_records` |
 
-`test.md` lists manual checks for every part with the expected output, including a full end-to-end run (section "End-to-end run").
-
 Clean up after testing:
 
 ```bash
@@ -177,7 +176,6 @@ llm_client.py          LLM calls: config from .env, retries, JSON validation, ca
 cache.py               disk cache in data/cache/
 clean.py               delete results, cache and bytecode
 test_data/             test data set: gene list, dummy evidence, wrong claims
-test.md                manual test checklist
 results/               everything the pipeline generates (git-ignored)
 ```
 
