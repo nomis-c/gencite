@@ -8,7 +8,6 @@ The test set (test_data/eval_expected.json) marks each gene as "clear" (with ter
 mention) or "negative" (pseudogene, unknown symbol: an honest answer says there is little or no evidence).
 """
 
-
 import argparse
 import json
 import re
