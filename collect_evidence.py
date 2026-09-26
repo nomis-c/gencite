@@ -1,6 +1,7 @@
 from pubmed_retrieval import retrieve_pubmed_evidence
 from opentargets import retrieve_open_targets_evidence
 from hpa_retrieval import retrieve_hpa_evidence
+from amass_retrieval import retrieve_amass_evidence
 
 
 def _deduplicate_evidence(evidence: list[dict]) -> list[dict]:
@@ -28,6 +29,7 @@ def collect_evidence(
     gene_info: dict,
     max_pubmed_results: int = 5,
     max_diseases: int = 5,
+    max_amass_biomed_results: int = 3,
 ) -> dict:
     """
     Collect evidence for one resolved gene from all available sources.
@@ -44,6 +46,7 @@ def collect_evidence(
             "pubmed": 0,
             "open_targets": 0,
             "human_protein_atlas": 0,
+            "amass": 0,
         },
         "evidence_count": 0,
     }
@@ -129,6 +132,32 @@ def collect_evidence(
         })
 
     # -------------------------
+    # AMASS evidence
+    # -------------------------
+    if gene_symbol:
+        try:
+            amass_evidence = retrieve_amass_evidence(
+                gene_symbol=gene_symbol,
+                ensembl_id=ensembl_id,
+                max_biomed_results=max_amass_biomed_results,
+            )
+
+            record["evidence"].extend(amass_evidence)
+            record["source_counts"]["amass"] = len(amass_evidence)
+
+        except Exception as exc:
+            record["errors"].append({
+                "source": "amass",
+                "message": str(exc),
+            })
+
+    else:
+        record["errors"].append({
+            "source": "amass",
+            "message": "No gene symbol available for this gene.",
+        })
+
+    # -------------------------
     # Final cleanup
     # -------------------------
     record["evidence"] = _deduplicate_evidence(record["evidence"])
@@ -141,6 +170,7 @@ def collect_evidence_for_genes(
     gene_infos: list[dict],
     max_pubmed_results: int = 5,
     max_diseases: int = 5,
+    max_amass_biomed_results: int = 3,
 ) -> list[dict]:
     """
     Collect evidence for multiple resolved genes.
@@ -151,6 +181,7 @@ def collect_evidence_for_genes(
             gene_info,
             max_pubmed_results=max_pubmed_results,
             max_diseases=max_diseases,
+            max_amass_biomed_results=max_amass_biomed_results,
         )
         for gene_info in gene_infos
     ]
