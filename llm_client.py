@@ -11,6 +11,8 @@ import time
 from dotenv import load_dotenv
 from pydantic import BaseModel, ValidationError
 
+import cache
+
 load_dotenv()
 
 
@@ -56,6 +58,22 @@ def _extract_json(raw: str) -> str:
 
 
 def llm_json(prompt: str, system: str, model: type[BaseModel], role: str = "synth") -> BaseModel:
+    """Validated answer from the cache, or call the LLM and cache it. Invalid output is never cached."""
+    cfg = _config(role)
+    req = {"base_url": cfg["base_url"], "model": cfg["model"], "system": system, "prompt": prompt,
+           "schema": model.__name__}
+    hit = cache.get("llm", req)
+    if hit is not None:
+        try:
+            return model.model_validate(hit)
+        except ValidationError:
+            pass  # schema changed since this was cached: ask the LLM again
+    out = _call_validated(prompt, system, model, role)
+    cache.put("llm", req, out.model_dump())
+    return out
+
+
+def _call_validated(prompt: str, system: str, model: type[BaseModel], role: str) -> BaseModel:
     """Call the LLM and validate. On bad output retry once with the error appended."""
     raw = chat(prompt, system=system, role=role)
     try:

@@ -4,3 +4,4 @@ ablage/
 .venv/
 output/
 __pycache__/
+data/

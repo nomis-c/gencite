@@ -8,7 +8,7 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-from llm_client import LLMOutputError, llm_json
+from llm_client import llm_json
 from schema import Claim, ClaimCheck, Evidence, GeneRecord, SynthResult, VerifyResult
 from synth_LLM import load_records
 
@@ -19,6 +19,9 @@ Judge ONLY from the given evidence text. Ignore your own background knowledge, e
 - "unsupported": the evidence does not say this, contradicts it, or is about a different gene.
 Output JSON only:
 {"verdict": "supported|partial|unsupported", "reason": "one short sentence"}"""
+
+
+JUDGE_FAILED = "Judge failed: "
 
 
 class Judgement(BaseModel):
@@ -53,7 +56,8 @@ def judge_claim(claim: Claim, record: GeneRecord, cited: list[Evidence]) -> Judg
 
 
 def verify(synth: SynthResult, record: GeneRecord, use_llm: bool = True) -> VerifyResult:
-    """Layer 1 for every claim. Claims with invalid IDs get "invalid_id" and are not sent to the judge."""
+    """Layer 1 for every claim. Claims with invalid IDs get "invalid_id" and are not sent to the judge.
+    A failed judge call only marks that claim "unchecked", the other claims are still judged."""
     by_id = {e.id: e for e in record.evidence}
     checks = []
     for c in synth.claims:
@@ -65,9 +69,18 @@ def verify(synth: SynthResult, record: GeneRecord, use_llm: bool = True) -> Veri
         if not use_llm:
             checks.append(ClaimCheck(**c.model_dump(), verdict="unchecked", reason="Layer 2 skipped (--no-llm)."))
             continue
-        j = judge_claim(c, record, [by_id[i] for i in c.evidence_ids])
+        try:
+            j = judge_claim(c, record, [by_id[i] for i in c.evidence_ids])
+        except Exception as err:  # bad JSON, rate limit, network, missing key: not cached, so a rerun retries it
+            checks.append(ClaimCheck(**c.model_dump(), verdict="unchecked",
+                                     reason=f"{JUDGE_FAILED}{type(err).__name__}: {str(err)[:200]}"))
+            continue
         checks.append(ClaimCheck(**c.model_dump(), verdict=j.verdict, reason=j.reason))
     return VerifyResult(gene=synth.gene, evidence_level=synth.evidence_level, note=synth.note, claims=checks)
+
+
+def judge_failures(res: VerifyResult) -> int:
+    return sum(c.reason.startswith(JUDGE_FAILED) for c in res.claims)
 
 
 def main() -> None:
@@ -93,24 +106,22 @@ def main() -> None:
         return
 
     args.out.mkdir(parents=True, exist_ok=True)
-    failed = 0
+    failed = unjudged = 0
     for s in synths:
         if s.gene not in records:
             print(f"{s.gene}: no GeneRecord found in {args.records}", file=sys.stderr)
             failed += 1
             continue
-        try:
-            res = verify(s, records[s.gene], use_llm=not args.no_llm)
-        except LLMOutputError as err:
-            print(f"{s.gene}: verification failed - {err}", file=sys.stderr)
-            failed += 1
-            continue
+        res = verify(s, records[s.gene], use_llm=not args.no_llm)
+        unjudged += judge_failures(res)
         (args.out / f"{res.gene}.json").write_text(res.model_dump_json(indent=2), encoding="utf-8")
         print(f"\n{res.gene} [{res.evidence_level}]")
         for c in res.claims:
             print(f"  [{c.verdict}] {c.text}\n      -> {c.reason}")
     print(f"\nWrote {len(synths) - failed} results to {args.out}/" + (f", {failed} failed" if failed else ""))
-    if failed:
+    if unjudged:
+        print(f"{unjudged} claims could not be judged (marked unchecked) - rerun to retry them", file=sys.stderr)
+    if failed or unjudged:
         sys.exit(1)
 
 

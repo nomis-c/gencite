@@ -14,7 +14,7 @@ import cache
 from create_report import MARK, build_report, counts, print_summary
 from schema import GeneRecord, SynthResult, VerifyResult
 from synth_LLM import load_records, synthesize
-from verify import verify
+from verify import judge_failures, verify
 
 
 def fetch_records(gene_file: Path) -> list[GeneRecord]:
@@ -73,17 +73,18 @@ def main() -> None:
     if not records:
         sys.exit("No genes to process.")
 
-    results, failed = [], 0
+    results, failed, unjudged = [], 0, 0
     for i, rec in enumerate(records, 1):
         symbol = rec.gene.symbol
         try:
             synth, res = run_gene(rec, use_judge=not args.no_judge)
-        except Exception as err:  # LLM errors incl. rate limits: skip this gene, keep the run going
+        except Exception as err:  # synthesis failed (LLM error, rate limit): skip this gene, keep the run going
             print(f"[{i}/{len(records)}] {symbol}: failed - {err}", file=sys.stderr)
             failed += 1
             continue
         _save(args.out / "synth", symbol, synth)
         _save(args.out / "verified", symbol, res)
+        unjudged += judge_failures(res)
         n = counts(res)
         marks = " ".join(f"{n[v]}{MARK[v]}" for v in n if n[v])
         print(f"[{i}/{len(records)}] {symbol}: {res.evidence_level}, {len(res.claims)} claims" + (f" ({marks})" if marks else ""))
@@ -96,7 +97,9 @@ def main() -> None:
         print(f"Wrote {report}" + (f", {failed} genes failed" if failed else ""))
     if cache.ENABLED:
         print(f"Cache: {cache.stats['hits']} hits, {cache.stats['misses']} new calls ({cache.CACHE_DIR})")
-    if failed:
+    if unjudged:
+        print(f"{unjudged} claims could not be judged (marked unchecked) - rerun to retry them", file=sys.stderr)
+    if failed or unjudged:
         sys.exit(1)
 
 
