@@ -1,0 +1,37 @@
+# Checks that need no API key and cost nothing: formatting, imports, offline tests.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            requirement.txt
+            requirement_dev.txt
+
+      - name: Install dependencies
+        run: pip install -r requirement_dev.txt
+
+      - name: Formatting (black)
+        run: black --check gencite/ streamlit_app.py tests/
+
+      - name: Everything imports
+        run: python -m compileall -q gencite streamlit_app.py
+
+      - name: Tests (offline, no LLM)
+        run: python -m pytest -q
+
+      - name: Command line works without a key
+        run: |
+          python -m gencite.synth_LLM test_data/dummy_records --dry-run > /dev/null
+          python -m gencite.verify test_data/synth_bad test_data/dummy_records --no-llm
