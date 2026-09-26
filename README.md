@@ -9,7 +9,7 @@ Almost every omics analysis ends with a gene list that someone has to interpret:
 
 gencite does the lookup and a first written summary for every gene, and makes each statement checkable:
 
-- **Every claim cites evidence.** The LLM may only use the retrieved evidence, and every claim names the PubMed or Open Targets record it is based on.
+- **Every claim cites evidence.** The LLM may only use the retrieved evidence, and every claim names the PubMed, Open Targets or Human Protein Atlas record it is based on.
 - **Every citation is checked in code.** A claim that cites an ID not retrieved for that gene is flagged (`invalid_id`).
 - **Every claim is checked against its source.** A second LLM call (the judge) reads the claim and only the evidence it cites, and rates it `supported`, `partial` or `unsupported` with a one-line reason.
 - **Honest about missing evidence.** Genes without usable evidence (unresolved symbols, most pseudogenes) get no claims and a note that says why.
@@ -18,36 +18,34 @@ The result is one Markdown report that a scientist can read and verify, with a l
 
 ## How it works
 
-```
-gene list ─► 1 parse ─► 2 resolve IDs ─► 3 PubMed ─► 4 Open Targets ─► 5 evidence per gene   records/
-         ─► 6 synthesizer (LLM): short claims, each citing evidence IDs                        synth/
-         ─► 7 ID check (code) ─► 8 judge (LLM): supported / partial / unsupported              verified/
-         ─► 9 report                                                                           report.md
-```
+![gencite_pipeline](img/pipeline_flowchart.svg)
 
-| Step | What happens | Source |
-|---|---|---|
-| 1 | Read the list; header line, comments, blanks and duplicates are removed | `inputs.py` |
-| 2 | Symbol → Ensembl / Entrez ID and gene type | MyGene.info |
-| 3 | Top 5 abstracts that mention the gene | PubMed (NCBI E-utilities) |
-| 4 | Gene biotype and top disease associations | Open Targets |
-| 5 | Evidence items with IDs (`PMID:…`, `OT:…`) per gene | `collect_evidence.py` |
-| 6 | Up to 5 claims, each citing evidence IDs, plus an evidence level `sufficient` / `limited` / `none` | LLM |
-| 7 | Every cited ID must be in this gene's evidence | code |
-| 8 | Each claim is judged against the text it cites | LLM (can be a different model) |
-| 9 | Summary table + one section per gene with claims, status and source links | `create_report.py` |
+| Step | What happens | Data source | Code |
+|---|---|---|---|
+| Process input file | read the list; header line, comments, blanks and duplicates are removed | – | `inputs.py` |
+| Get gene ID & gene type | symbol → Ensembl / Entrez ID and gene type. Symbol not found → evidence level `none`, no LLM call | MyGene.info | `ids.py` |
+| Retrieve evidence | top 5 abstracts that mention the gene | PubMed (NCBI E-utilities) | `pubmed_retrieval.py` |
+| | gene biotype and top 5 disease associations | Open Targets | `opentargets.py` |
+| | tissue and cell-type expression, biological process, molecular function, disease involvement | Human Protein Atlas | `hpa_retrieval.py` |
+| Evidence record per gene | all items of a gene, each with an ID (`PMID:…`, `OT:…`, `HPA:…`). No evidence → `none`, no LLM call | – | `collect_evidence.py` |
+| **Synthesizer** (LLM) | up to 5 short claims, each citing evidence IDs, plus an evidence level `sufficient` / `limited` / `none` | LLM | `synth_LLM.py` |
+| Verifier 1 · ID check | every cited ID must be in this gene's evidence, otherwise `invalid_id` (`X`) and the claim is not judged | – | `verify.py` |
+| **Verifier 2 · Judge** (LLM) | reads the claim and only the evidence it cites → `supported` / `partial` / `unsupported` with a one-line reason | LLM (can be a different model) | `verify.py` |
+| Gene report | summary table + one section per gene: gene type, claims, status, source links, all retrieved evidence | – | `create_report.py` |
+
+Retrieval sources are independent: if one fails or has no entry for a gene (e.g. a pseudogene missing in the Human Protein Atlas), the gene continues with the others.
 
 ## Requirements
 
 - Python 3.10 or newer
-- Internet access to MyGene.info, NCBI E-utilities and the Open Targets API (all free, no key needed)
+- Internet access to MyGene.info, NCBI E-utilities, the Open Targets API and the Human Protein Atlas (all free, no key needed)
 - An API key for an OpenAI-compatible LLM endpoint (DeepSeek, Groq, Gemini, OpenAI, a local Ollama server, …)
 
 Python packages (`requirement.txt`):
 
 | Package | Used for |
 |---|---|
-| `requests` | MyGene.info, PubMed and Open Targets calls |
+| `requests` | MyGene.info, PubMed, Open Targets and Human Protein Atlas calls |
 | `openai` | LLM calls (any OpenAI-compatible endpoint) |
 | `pydantic` | data schemas and validation of the LLM output |
 | `python-dotenv` | reading the configuration from `.env` |
@@ -97,11 +95,11 @@ Your own list is a text file with one gene symbol per line. A header line such a
 
 | Command | What it does |
 |---|---|
-| `python cli.py <genes.txt>` | whole pipeline, steps 1–9 |
+| `python cli.py <genes.txt>` | whole pipeline, gene list → report |
 | `python cli.py <genes.txt> --out output/my_run` | write to another folder (default `output/run`) |
-| `python cli.py <genes.txt> --no-judge` | skip the judge (step 8), claims get `?`, fewer LLM calls |
+| `python cli.py <genes.txt> --no-judge` | skip verifier 2 (judge), claims get `?`, fewer LLM calls |
 | `python cli.py <genes.txt> --no-cache` | ask the LLM again instead of using cached answers |
-| `python cli.py <records folder>` | steps 6–9 on saved evidence, e.g. `output/run/records` or `test_data` |
+| `python cli.py <records folder>` | synthesizer → report on saved evidence (no retrieval), e.g. `output/run/records` or `test_data` |
 | `python cli.py --help` | all options |
 | `python cache.py` / `python cache.py --clear` | show / delete the LLM cache in `data/cache/` |
 
@@ -109,11 +107,11 @@ Single steps, e.g. to look at the prompts or rerun one stage:
 
 | Step | Command |
 |---|---|
-| 6 synthesizer | `python synth_LLM.py <records> [--out DIR] [--dry-run]` |
-| 7–8 verifier | `python verify.py <synth> <records> [--out DIR] [--no-llm] [--dry-run]` |
-| 9 report | `python create_report.py <verified> <records> [--out FILE]` |
+| Synthesizer | `python synth_LLM.py <records> [--out DIR] [--dry-run]` |
+| Verifier 1 + 2 | `python verify.py <synth> <records> [--out DIR] [--no-llm] [--dry-run]` |
+| Gene report | `python create_report.py <verified> <records> [--out FILE]` |
 
-`--dry-run` prints the LLM prompts without calling the LLM, `--no-llm` runs only the ID check.
+`--dry-run` prints the LLM prompts without calling the LLM, `--no-llm` runs only verifier 1 (ID check).
 
 ### Output
 
@@ -140,7 +138,7 @@ Exit code 1 means some genes or claims failed, usually because of an LLM rate li
 
 ## Testing
 
-`test_data/` holds hand-written evidence for 6 genes with made-up PMIDs, including traps (a readthrough whose evidence is about its partner gene, a pseudogene, an unresolved symbol), and `test_data/synth_bad/` holds deliberately wrong claims for the verifier. This runs steps 6–9 without any retrieval:
+`test_data/` holds hand-written evidence for 6 genes with made-up PMIDs, including traps (a readthrough whose evidence is about its partner gene, a pseudogene, an unresolved symbol), and `test_data/synth_bad/` holds deliberately wrong claims for the verifier. This runs synthesizer → report without any retrieval:
 
 ```bash
 python cli.py test_data --out output/run_testdata
@@ -152,14 +150,15 @@ python cli.py test_data --out output/run_testdata
 
 ```
 cli.py                 entry point: whole pipeline
-inputs.py              1  gene list parsing
-ids.py                 2  MyGene.info ID resolution
-pubmed_retrieval.py    3  PubMed search + abstracts
-opentargets.py         4  Open Targets associations
-collect_evidence.py    5  evidence per gene
-synth_LLM.py           6  synthesizer
-verify.py              7+8 ID check and LLM judge
-create_report.py       9  Markdown report
+inputs.py              gene list parsing
+ids.py                 gene ID + gene type (MyGene.info)
+pubmed_retrieval.py    PubMed search + abstracts
+opentargets.py         Open Targets biotype + disease associations
+hpa_retrieval.py       Human Protein Atlas expression + annotation
+collect_evidence.py    evidence record per gene (all sources)
+synth_LLM.py           synthesizer (LLM)
+verify.py              verifier 1 (ID check) + verifier 2 (LLM judge)
+create_report.py       gene report (Markdown)
 schema.py              data shapes shared by all steps (pydantic)
 llm_client.py          LLM calls: config from .env, retries, JSON validation, cache
 cache.py               disk cache in data/cache/
@@ -173,5 +172,5 @@ test.md                manual test checklist
 - The gene type comes straight from MyGene.info: readthroughs show as `protein-coding`, pseudogenes as `unknown`.
 - The PubMed search has no filter, so reviews that only mention a gene in passing are common.
 - Non-human studies are not filtered out (e.g. MYOZ3: chicken, rat, horse), and claims do not always name the species.
-- Only LLM calls are cached; MyGene, PubMed and Open Targets are called again on every run.
+- Only LLM calls are cached; MyGene, PubMed, Open Targets and the Human Protein Atlas are called again on every run.
 - The judge is an LLM too: it can miss an overstated claim, so `supported` means "the judge found it in the cited text", not "proven".
