@@ -94,7 +94,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(description="Gene report: verified claims + linked sources -> Markdown")
     ap.add_argument("verified", type=Path, help="folder with VerifyResult JSONs")
     ap.add_argument("records", type=Path, help="folder with the matching GeneRecord JSONs")
-    ap.add_argument("--out", type=Path, default=Path("output/report.md"))
+    ap.add_argument("--out", type=Path, default=Path("results/steps/report.md"))
     args = ap.parse_args()
 
     results = [VerifyResult.model_validate_json(f.read_text(encoding="utf-8"))

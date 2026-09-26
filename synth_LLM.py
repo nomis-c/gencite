@@ -68,7 +68,7 @@ def load_records(paths: list[Path]) -> list[GeneRecord]:
 def main() -> None:
     ap = argparse.ArgumentParser(description="LLM synthesizer: evidence -> cited claims")
     ap.add_argument("inputs", nargs="+", type=Path, help="GeneRecord JSON files or folders")
-    ap.add_argument("--out", type=Path, default=Path("output/synth"))
+    ap.add_argument("--out", type=Path, default=Path("results/steps/synth"))
     ap.add_argument("--dry-run", action="store_true", help="print prompts, do not call the LLM")
     args = ap.parse_args()
 

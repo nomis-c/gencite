@@ -2,7 +2,9 @@ tmp/
 .idea/
 .env
 .venv/
+results/
 output/
 data/
 __pycache__/
 *.pyc
+test.md
