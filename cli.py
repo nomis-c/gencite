@@ -31,12 +31,12 @@ def fetch_records(gene_file: Path) -> list[GeneRecord]:
     for i, symbol in enumerate(symbols, 1):
         try:
             raw = collect_evidence(resolve_gene_id(symbol))
-        except Exception as err:  # network / API errors: report and go on with the next gene
+            rec = GeneRecord.model_validate(raw)
+        except Exception as err:  # network / API errors or malformed evidence: report and go on with the next gene
             print(f"[{i}/{len(symbols)}] {symbol}: retrieval failed - {err}", file=sys.stderr)
             continue
         for e in raw.get("errors", []):
             print(f"[{i}/{len(symbols)}] {symbol}: {e['source']} - {e['message']}", file=sys.stderr)
-        rec = GeneRecord.model_validate(raw)
         print(f"[{i}/{len(symbols)}] {symbol}: {len(rec.evidence)} evidence items")
         records.append(rec)
     return records
