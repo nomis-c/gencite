@@ -1,8 +1,8 @@
 """Command line entry point: gene list -> evidence -> claims -> verification -> report.
 
-    python cli.py test_data/gene_list.txt          # full pipeline -> results/gene_list/
-    python cli.py test_data/dummy_records          # folder of GeneRecord JSONs: no retrieval -> results/dummy_records/
-    python cli.py test_data/gene_list.txt --no-judge
+    python -m gencite test_data/gene_list.txt          # full pipeline -> results/gene_list/
+    python -m gencite test_data/dummy_records          # folder of GeneRecord JSONs: no retrieval -> results/dummy_records/
+    python -m gencite test_data/gene_list.txt --no-judge
 
 Each run writes to its own folder (results/<input name>/ or --out) and clears that folder's old results first.
 """
@@ -13,19 +13,19 @@ import shutil
 import sys
 from pathlib import Path
 
-import cache
-from create_report import MARK, build_report, counts, print_summary
-from schema import GeneRecord, SynthResult, VerifyResult
-from synth_LLM import load_records, synthesize
-from verify import judge_failures, verify
+from gencite import cache
+from gencite.create_report import MARK, build_report, counts, print_summary
+from gencite.schema import GeneRecord, SynthResult, VerifyResult
+from gencite.synth_LLM import load_records, synthesize
+from gencite.verify import judge_failures, verify
 
 
 def fetch_records(gene_file: Path) -> list[GeneRecord]:
     """Steps 1-5: parse the list, resolve IDs, collect PubMed + Open Targets evidence."""
     try:  # imported here so the records-folder mode works without the retrieval modules
-        from collect_evidence import collect_evidence
-        from ids import resolve_gene_id
-        from inputs import parse_gene_list
+        from gencite.collect_evidence import collect_evidence
+        from gencite.ids import resolve_gene_id
+        from gencite.inputs import parse_gene_list
     except ModuleNotFoundError as err:
         sys.exit(f"Retrieval modules missing ({err.name}.py) - run on a GeneRecord folder instead, e.g. test_data/")
 

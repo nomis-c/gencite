@@ -11,7 +11,7 @@ import time
 from dotenv import load_dotenv
 from pydantic import BaseModel, ValidationError
 
-import cache
+from gencite import cache
 
 load_dotenv()
 
@@ -32,7 +32,7 @@ def _config(role: str) -> dict:
 
 def chat(prompt: str, system: str = "", role: str = "synth", temperature: float = 0.0) -> str:
     """One chat completion in JSON mode. Returns the raw message content."""
-    from openai import OpenAI, OpenAIError, RateLimitError  # lazy import so --dry-run works without it
+    from openai import OpenAI, OpenAIError, RateLimitError
     cfg = _config(role)
     if not cfg["api_key"]:
         raise LLMOutputError(f"No API key for role '{role}' - set LLM_API_KEY in .env")

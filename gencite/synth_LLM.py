@@ -7,8 +7,8 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field
 
-from llm_client import LLMOutputError, llm_json
-from schema import Claim, EvidenceLevel, GeneRecord, SynthResult
+from gencite.llm_client import LLMOutputError, llm_json
+from gencite.schema import Claim, EvidenceLevel, GeneRecord, SynthResult
 
 SYSTEM = """You summarise the biology of one human gene for a scientist.
 You get evidence items, each with an ID in square brackets. Write up to 5 short claims on the gene's function and disease relevance.

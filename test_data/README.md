@@ -2,9 +2,9 @@
 
 | Path | Content |
 |---|---|
-| `gene_list.txt` | 15 real genes for a live run: `python cli.py test_data/gene_list.txt` |
-| `dummy_records/` | 6 hand-written GeneRecords, no retrieval needed: `python cli.py test_data/dummy_records` |
-| `synth_bad/` | deliberately wrong claims for the verifier: `python verify.py test_data/synth_bad test_data/dummy_records` |
+| `gene_list.txt` | 15 real genes for a live run: `python -m gencite test_data/gene_list.txt` |
+| `dummy_records/` | 6 hand-written GeneRecords, no retrieval needed: `python -m gencite test_data/dummy_records` |
+| `synth_bad/` | deliberately wrong claims for the verifier: `python -m gencite.verify test_data/synth_bad test_data/dummy_records` |
 | `eval_genes.txt` | evaluation set: 5 well-described genes + 3 negative controls, for gencite vs. baseline |
 | `eval_expected.json` | expected terms and kind (`clear` / `negative`) per gene of `eval_genes.txt`, read by `evaluate.py` |
 
@@ -42,9 +42,9 @@ Hand-written `SynthResult`s with deliberately wrong claims, input for `verify.py
 Compares gencite with the baseline (same LLM without retrieval, `baseline.py`):
 
 ```bash
-python cli.py test_data/eval_genes.txt        # gencite  -> results/eval_genes/
-python baseline.py test_data/eval_genes.txt   # baseline -> results/eval_genes/baseline/
-python evaluate.py results/eval_genes         # -> results/eval_genes/evaluation.md
+python -m gencite test_data/eval_genes.txt        # gencite  -> results/eval_genes/
+python -m gencite.baseline test_data/eval_genes.txt   # baseline -> results/eval_genes/baseline/
+python -m gencite.evaluate results/eval_genes         # -> results/eval_genes/evaluation.md
 ```
 
 | Gene | Kind | Why | Expected (any of the terms counts) |

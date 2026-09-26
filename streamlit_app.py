@@ -7,16 +7,16 @@ load_dotenv()
 
 import streamlit as st
 
-from collect_evidence import (
+from gencite.collect_evidence import (
     DEFAULT_EVIDENCE_SOURCES,
     collect_evidence,
 )
-from create_report import build_report
-from ids import resolve_gene_id
-from inputs import parse_gene_list
-from schema import GeneRecord
-from synth_LLM import synthesize
-from verify import verify
+from gencite.create_report import build_report
+from gencite.ids import resolve_gene_id
+from gencite.inputs import parse_gene_list
+from gencite.schema import GeneRecord
+from gencite.synth_LLM import synthesize
+from gencite.verify import JUDGE_FAILED, verify
 
 
 # ---------------------------------------------------------
@@ -140,6 +140,23 @@ st.markdown(
 # ---------------------------------------------------------
 # Helper functions
 # ---------------------------------------------------------
+
+def escape_markdown(text: str) -> str:
+    """
+    Show text literally in st.markdown.
+
+    Abstracts and claims can contain characters that Markdown
+    would interpret, e.g. '*' (italics) or '$' (LaTeX).
+    """
+
+    for char in "\\`*_[]<>#|$~":
+        text = text.replace(
+            char,
+            "\\" + char,
+        )
+
+    return text
+
 
 def evidence_source_group(source: str) -> str:
     """
@@ -398,6 +415,7 @@ def run_analysis(
     progress.empty()
 
     return {
+        "genes": list(genes),
         "records": records,
         "verified_by_gene": (
             verified_by_gene
@@ -463,7 +481,7 @@ def render_claims(
 
             st.markdown(
                 f"**{claim_number}. "
-                f"{claim.text}**"
+                f"{escape_markdown(claim.text)}**"
             )
 
             source_links = (
@@ -482,7 +500,19 @@ def render_claims(
             if claim.reason:
                 st.caption(
                     "Verifier: "
-                    + claim.reason
+                    + escape_markdown(claim.reason)
+                )
+
+            # A failed judge call is not cached, so a new run
+            # retries only these claims.
+            if claim.reason.startswith(
+                JUDGE_FAILED
+            ):
+                st.caption(
+                    "The judge call failed (e.g. rate limit). "
+                    "Click Analyse genes again to retry; "
+                    "claims that were already judged come "
+                    "from the cache."
                 )
 
 
@@ -522,12 +552,12 @@ def render_evidence(
 
             if item.title:
                 st.markdown(
-                    f"**{item.title}**"
+                    f"**{escape_markdown(item.title)}**"
                 )
 
             if item.text:
-                st.write(
-                    item.text
+                st.markdown(
+                    escape_markdown(item.text)
                 )
 
             if item.url:
@@ -768,7 +798,7 @@ st.markdown(
 )
 
 st.caption(
-    "GenCite currently supports Homo sapiens genes."
+    "gencite currently supports Homo sapiens genes."
 )
 
 
@@ -1008,6 +1038,24 @@ if analyse_clicked:
 analysis = st.session_state.get(
     "gencite_analysis"
 )
+
+# Results belong to the gene list and sources they were run with.
+# If the file or the source selection changed since, drop them
+# instead of showing them next to the new inputs.
+if analysis and (
+    analysis["genes"] != genes
+    or analysis["enabled_sources"] != selected_sources
+):
+    del st.session_state[
+        "gencite_analysis"
+    ]
+
+    analysis = None
+
+    st.info(
+        "The gene list or the source selection changed. "
+        "Click Analyse genes to run the analysis again."
+    )
 
 if analysis:
     st.divider()

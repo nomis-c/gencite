@@ -1,8 +1,8 @@
 """Evaluation: compares a gencite run with the baseline on a fixed test set. Reads files only, no API or LLM calls.
 
-    python cli.py test_data/eval_genes.txt              # gencite  -> results/eval_genes/
-    python baseline.py test_data/eval_genes.txt         # baseline -> results/eval_genes/baseline/
-    python evaluate.py results/eval_genes               # -> results/eval_genes/evaluation.md + .json
+    python -m gencite test_data/eval_genes.txt              # gencite  -> results/eval_genes/
+    python -m gencite.baseline test_data/eval_genes.txt         # baseline -> results/eval_genes/baseline/
+    python -m gencite.evaluate results/eval_genes               # -> results/eval_genes/evaluation.md + .json
 
 The test set (test_data/eval_expected.json) marks each gene as "clear" (with terms a correct summary should
 mention) or "negative" (pseudogene, unknown symbol: an honest answer says there is little or no evidence).
@@ -14,9 +14,9 @@ import re
 import sys
 from pathlib import Path
 
-from create_report import ORDER, _cell
-from schema import GeneRecord, VerifyResult
-from synth_LLM import load_records
+from gencite.create_report import ORDER, _cell
+from gencite.schema import GeneRecord, VerifyResult
+from gencite.synth_LLM import load_records
 
 SYSTEMS = {"gencite": "", "baseline": "baseline"}  # system name -> subfolder of the run folder
 
@@ -135,7 +135,7 @@ def main() -> None:
         if metrics[name]["missing"]:
             print(f"{name}: no result for {', '.join(metrics[name]['missing'])}", file=sys.stderr)
     if not metrics:
-        sys.exit("Nothing to evaluate - run cli.py and baseline.py first.")
+        sys.exit("Nothing to evaluate - run python -m gencite and python -m gencite.baseline first.")
 
     md = build_markdown(metrics, fails, expected)
     (args.run / "evaluation.md").write_text(md, encoding="utf-8")
