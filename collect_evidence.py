@@ -1,5 +1,6 @@
 from pubmed_retrieval import retrieve_pubmed_evidence
 from opentargets import retrieve_open_targets_evidence
+from hpa_retrieval import retrieve_hpa_evidence
 
 
 def _deduplicate_evidence(evidence: list[dict]) -> list[dict]:
@@ -31,8 +32,8 @@ def collect_evidence(
     """
     Collect evidence for one resolved gene from all available sources.
 
-    The function preserves partial results if one evidence source fails
-    and records any errors instead of silently discarding them.
+    Partial results are preserved if one evidence source fails.
+    Errors are recorded instead of silently discarded.
     """
 
     record = {
@@ -42,6 +43,7 @@ def collect_evidence(
         "source_counts": {
             "pubmed": 0,
             "open_targets": 0,
+            "human_protein_atlas": 0,
         },
         "evidence_count": 0,
     }
@@ -57,7 +59,6 @@ def collect_evidence(
     gene_symbol = gene_info.get("symbol")
     ensembl_id = gene_info.get("ensembl_id")
 
-
     # -------------------------
     # PubMed evidence
     # -------------------------
@@ -71,7 +72,6 @@ def collect_evidence(
         record["source_counts"]["pubmed"] = len(pubmed_evidence)
 
     except Exception as exc:
-        record["source_counts"]["pubmed"] = 0
         record["errors"].append({
             "source": "pubmed",
             "message": str(exc),
@@ -93,25 +93,47 @@ def collect_evidence(
             )
 
         except Exception as exc:
-            record["source_counts"]["open_targets"] = 0
             record["errors"].append({
                 "source": "open_targets",
                 "message": str(exc),
             })
 
     else:
-        record["source_counts"]["open_targets"] = 0
         record["errors"].append({
             "source": "open_targets",
             "message": "No Ensembl ID available for this gene.",
         })
 
+    # -------------------------
+    # Human Protein Atlas evidence
+    # -------------------------
+    if ensembl_id:
+        try:
+            hpa_evidence = retrieve_hpa_evidence(ensembl_id)
+
+            record["evidence"].extend(hpa_evidence)
+            record["source_counts"]["human_protein_atlas"] = len(
+                hpa_evidence
+            )
+
+        except Exception as exc:
+            record["errors"].append({
+                "source": "human_protein_atlas",
+                "message": str(exc),
+            })
+
+    else:
+        record["errors"].append({
+            "source": "human_protein_atlas",
+            "message": "No Ensembl ID available for this gene.",
+        })
 
     # -------------------------
     # Final cleanup
     # -------------------------
     record["evidence"] = _deduplicate_evidence(record["evidence"])
     record["evidence_count"] = len(record["evidence"])
+
     return record
 
 
