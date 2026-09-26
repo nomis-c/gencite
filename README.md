@@ -102,7 +102,6 @@ Your own list is a text file with one gene symbol per line. A header line such a
 | `python cli.py <genes.txt> --no-cache` | ask the LLM again instead of using cached answers |
 | `python cli.py <records folder>` | synthesizer → report on saved evidence (no retrieval), e.g. `results/gene_list/records` |
 | `python cli.py --help` | all options |
-| `python clean.py` | delete all results, the LLM cache and Python bytecode (`--keep-cache`, `--dry-run`) |
 | `python cache.py` / `python cache.py --clear` | show / delete only the LLM cache in `data/cache/` |
 
 Single steps, e.g. to look at the prompts or rerun one stage (default output: `results/steps/`):
@@ -150,12 +149,7 @@ Exit code 1 means some genes or claims failed, usually because of an LLM rate li
 | `test_data/dummy_records/` | hand-written evidence for 6 genes with made-up PMIDs, incl. traps (a readthrough whose evidence is about its partner gene, a pseudogene, an unresolved symbol) | synthesizer → report without retrieval: `python cli.py test_data/dummy_records` |
 | `test_data/synth_bad/` | deliberately wrong claims | verifier test: `python verify.py test_data/synth_bad test_data/dummy_records` |
 
-Clean up after testing:
-
-```bash
-python clean.py               # results/, LLM cache, __pycache__/
-python clean.py --keep-cache  # keep the cache so the next run is fast and free
-```
+Clean up after testing: `rm -rf results/ data/cache/`.
 
 ## Project structure
 
@@ -174,7 +168,6 @@ create_report.py       gene report (Markdown)
 schema.py              data shapes shared by all steps (pydantic)
 llm_client.py          LLM calls: config from .env, retries, JSON validation, cache
 cache.py               disk cache in data/cache/
-clean.py               delete results, cache and bytecode
 test_data/             test data set: gene list, dummy evidence, wrong claims
 results/               everything the pipeline generates (git-ignored)
 ```
