@@ -192,6 +192,14 @@ Exit code 1 means some genes or claims failed, usually because of an LLM rate li
 
 ## Testing
 
+Automated tests run offline: no API key, no network, no LLM calls, about a second.
+
+```bash
+pip install -r requirement_dev.txt                # once: requirement.txt + pytest + black
+python -m pytest                                  # tests/ (also run by GitHub Actions on every push and pull request)
+black --check gencite/ streamlit_app.py tests/    # formatting
+```
+
 `test_data/` is the test data set:
 
 | Path | Content | Used by |
@@ -235,6 +243,7 @@ gencite/               the pipeline (Python package)
   llm_client.py        LLM calls: config from .env, retries, JSON validation, cache
   cache.py             disk cache in data/cache/
 test_data/             test data set: gene list, dummy evidence, wrong claims, evaluation set
+tests/                 offline pytest suite
 results/               everything the pipeline generates (git-ignored)
 ```
 
