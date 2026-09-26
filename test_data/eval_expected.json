@@ -1,0 +1,10 @@
+{
+  "LCT": {"kind": "clear", "expected": ["lactase", "lactose"]},
+  "IRGM": {"kind": "clear", "expected": ["autophagy", "Crohn"]},
+  "SPG7": {"kind": "clear", "expected": ["paraplegin", "spastic paraplegia"]},
+  "HBG2": {"kind": "clear", "expected": ["fetal hemoglobin", "fetal haemoglobin", "HbF", "gamma-globin", "γ-globin"]},
+  "ERAP2": {"kind": "clear", "expected": ["aminopeptidase", "antigen"]},
+  "MAGOH2P": {"kind": "negative", "why": "pseudogene"},
+  "NOC2LP2": {"kind": "negative", "why": "pseudogene"},
+  "ABCXYZ": {"kind": "negative", "why": "symbol does not exist"}
+}

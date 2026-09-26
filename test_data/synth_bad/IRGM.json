@@ -1,0 +1,38 @@
+{
+  "gene": "IRGM",
+  "evidence_level": "sufficient",
+  "note": "",
+  "claims": [
+    {
+      "text": "IRGM acts as an adaptor that promotes co-assembly of ULK1 and BECN1 in human macrophages.",
+      "evidence_ids": [
+        "PMID:90000001"
+      ]
+    },
+    {
+      "text": "IRGM is required for autophagy in all human cell types.",
+      "evidence_ids": [
+        "PMID:99999999"
+      ]
+    },
+    {
+      "text": "IRGM is associated with Crohn's disease.",
+      "evidence_ids": [
+        "PMID:90000002",
+        "OT:function:SPG7"
+      ]
+    },
+    {
+      "text": "Loss of IRGM causes Crohn's disease in humans.",
+      "evidence_ids": [
+        "PMID:90000002"
+      ]
+    },
+    {
+      "text": "IRGM limits inflammation through mitophagy in human patients.",
+      "evidence_ids": [
+        "PMID:90000003"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "gene": {
+    "symbol": "LINC02210-CRHR1",
+    "ensembl_id": "ENSG00000263715",
+    "entrez_id": "104909134",
+    "gene_type": "readthrough",
+    "found": true
+  },
+  "evidence": [
+    {
+      "id": "PMID:90000031",
+      "source": "pubmed",
+      "title": "CRHR1 antagonists reduce stress-induced anxiety behaviour in rats",
+      "text": "Corticotropin-releasing hormone receptor 1 (CRHR1) mediates the endocrine stress response. Oral administration of a selective CRHR1 antagonist reduced anxiety-like behaviour and ACTH release in rats exposed to restraint stress.",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/90000031/"
+    },
+    {
+      "id": "PMID:90000032",
+      "source": "pubmed",
+      "title": "Genetic variation at 17q21.31 and Parkinson's disease risk",
+      "text": "The 17q21.31 inversion region contains MAPT, KANSL1, CRHR1 and several readthrough transcripts including LINC02210-CRHR1. The H1 haplotype of this region was associated with Parkinson's disease risk; the causal gene could not be resolved because of strong linkage disequilibrium.",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/90000032/"
+    },
+    {
+      "id": "OT:function:LINC02210-CRHR1",
+      "source": "open_targets",
+      "title": "Gene function",
+      "text": "Naturally occurring readthrough transcription between neighboring genes LINC02210 and CRHR1. The readthrough transcript encodes a protein that shares sequence identity with the product of the CRHR1 gene.",
+      "url": "https://platform.opentargets.org/target/ENSG00000263715"
+    }
+  ]
+}

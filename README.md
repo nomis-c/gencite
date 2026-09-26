@@ -149,6 +149,16 @@ Exit code 1 means some genes or claims failed, usually because of an LLM rate li
 | `test_data/dummy_records/` | hand-written evidence for 6 genes with made-up PMIDs, incl. traps (a readthrough whose evidence is about its partner gene, a pseudogene, an unresolved symbol) | synthesizer → report without retrieval: `python cli.py test_data/dummy_records` |
 | `test_data/synth_bad/` | deliberately wrong claims | verifier test: `python verify.py test_data/synth_bad test_data/dummy_records` |
 
+### Evaluation against a baseline
+
+The baseline is the same LLM without retrieval: it writes claims from memory and cites PMIDs it remembers. The cited PMIDs are fetched from PubMed and checked by the same verifier and judge as `gencite`. The test set (`test_data/eval_genes.txt`, expected terms in `test_data/eval_expected.json`) has five well-described genes and three negative controls (two pseudogenes, one symbol that does not exist).
+
+```bash
+python cli.py test_data/eval_genes.txt        # gencite  -> results/eval_genes/
+python baseline.py test_data/eval_genes.txt   # baseline -> results/eval_genes/baseline/
+python evaluate.py results/eval_genes         # -> results/eval_genes/evaluation.md (no API or LLM calls)
+```
+
 Clean up after testing: `rm -rf results/ data/cache/`.
 
 ## Project structure
@@ -165,10 +175,12 @@ collect_evidence.py    evidence record per gene (all sources)
 synth_LLM.py           synthesizer (LLM)
 verify.py              verifier 1 (ID check) + verifier 2 (LLM judge)
 create_report.py       gene report (Markdown)
+baseline.py            baseline: same LLM without retrieval, cited PMIDs checked afterwards
+evaluate.py            gencite vs. baseline on the test set -> evaluation.md
 schema.py              data shapes shared by all steps (pydantic)
 llm_client.py          LLM calls: config from .env, retries, JSON validation, cache
 cache.py               disk cache in data/cache/
-test_data/             test data set: gene list, dummy evidence, wrong claims
+test_data/             test data set: gene list, dummy evidence, wrong claims, evaluation set
 results/               everything the pipeline generates (git-ignored)
 ```
 
