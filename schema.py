@@ -1,0 +1,46 @@
+"""Data shapes shared by every pipeline stage."""
+from typing import Literal, Optional
+
+from pydantic import BaseModel, Field
+
+EvidenceSource = Literal["pubmed", "open_targets"]
+EvidenceLevel = Literal["sufficient", "limited", "none"]
+
+
+# 1st part: IDs + evidence
+
+class GeneInfo(BaseModel):
+    symbol: str
+    ensembl_id: Optional[str] = None
+    entrez_id: Optional[str] = None
+    gene_type: Optional[str] = None  # protein-coding | ncRNA | pseudo | readthrough ...
+    found: bool = True
+
+
+class Evidence(BaseModel):
+    id: str  # PMID:12345678 | OT:function:IRGM | OT:disease:IRGM:MONDO_...
+    source: EvidenceSource
+    title: str = ""
+    text: str = ""
+    url: str = ""
+
+
+class GeneRecord(BaseModel):
+    """Output of collect_evidence.py, input of the synthesizer."""
+    gene: GeneInfo
+    evidence: list[Evidence] = Field(default_factory=list)
+
+
+# 2nd part: synthesis + verification
+
+class Claim(BaseModel):
+    text: str
+    evidence_ids: list[str] = Field(min_length=1)  # a claim without a citation is rejected
+
+
+class SynthResult(BaseModel):
+    """Output of synth_LLM.py, input of verify.py."""
+    gene: str
+    evidence_level: EvidenceLevel
+    note: str = ""  # why evidence is limited/none, e.g. "gene not resolved"
+    claims: list[Claim] = Field(default_factory=list)
