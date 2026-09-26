@@ -11,7 +11,8 @@ from synth_LLM import load_records
 
 MARK = {"supported": "+", "partial": "~", "unsupported": "-", "invalid_id": "X", "unchecked": "?"}
 ORDER = ["supported", "partial", "unsupported", "invalid_id", "unchecked"]
-DISCLAIMER = ("Claims are LLM summaries of the retrieved evidence, checked by a second LLM. "
+DISCLAIMER = ("Claims are LLM summaries of the retrieved evidence. Each claim's status shows whether a second LLM "
+              "found it in the cited evidence; claims marked `?` were not checked. "
               "A generated summary is not a validated finding: read the cited sources before using a claim.")
 
 
@@ -63,8 +64,11 @@ def gene_section(res: VerifyResult, record: GeneRecord | None) -> str:
 
 def build_report(results: list[VerifyResult], records: dict[str, GeneRecord]) -> str:
     lines = ["# gencite report", "", f"{date.today().isoformat()} · {len(results)} genes", "",
-             f"*{DISCLAIMER}*", "",
-             "| Gene | Type | Evidence | Claims | + | ~ | - | X | ? |", "|---|---|---|---|---|---|---|---|---|"]
+             f"*{DISCLAIMER}*", ""]
+    unchecked = sum(counts(r)["unchecked"] for r in results)
+    if unchecked:
+        lines += [f"**Warning: {unchecked} claims were not checked by the judge (`?`), treat them as unverified.**", ""]
+    lines += ["| Gene | Type | Evidence | Claims | + | ~ | - | X | ? |", "|---|---|---|---|---|---|---|---|---|"]
     for r in results:
         rec = records.get(r.gene)
         gtype = (rec.gene.gene_type or "unknown") if rec and rec.gene.found else "not resolved" if rec else "?"

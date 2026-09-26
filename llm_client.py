@@ -32,7 +32,7 @@ def _config(role: str) -> dict:
 
 def chat(prompt: str, system: str = "", role: str = "synth", temperature: float = 0.0) -> str:
     """One chat completion in JSON mode. Returns the raw message content."""
-    from openai import OpenAI, RateLimitError  # lazy import so --dry-run works without it
+    from openai import OpenAI, OpenAIError, RateLimitError  # lazy import so --dry-run works without it
     cfg = _config(role)
     if not cfg["api_key"]:
         raise LLMOutputError(f"No API key for role '{role}' - set LLM_API_KEY in .env")
@@ -44,11 +44,13 @@ def chat(prompt: str, system: str = "", role: str = "synth", temperature: float 
             out = client.chat.completions.create(model=cfg["model"], messages=messages,
                                                  temperature=temperature,
                                                  response_format={"type": "json_object"})
-            return out.choices[0].message.content
-        except RateLimitError:
+            return out.choices[0].message.content or ""
+        except RateLimitError as err:
             if attempt == 3:
-                raise
+                raise LLMOutputError(f"rate limit, gave up after 4 attempts: {err}") from err
             time.sleep(15 * (attempt + 1))
+        except OpenAIError as err:  # connection, auth, bad request...: callers only need to catch LLMOutputError
+            raise LLMOutputError(f"{type(err).__name__}: {err}") from err
 
 
 def _extract_json(raw: str) -> str:
