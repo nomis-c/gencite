@@ -3,21 +3,11 @@ import xml.etree.ElementTree as ET
 
 import requests
 
+ELINK_URL = "https://eutils.ncbi.nlm.nih.gov/" "entrez/eutils/elink.fcgi"
 
-ELINK_URL = (
-    "https://eutils.ncbi.nlm.nih.gov/"
-    "entrez/eutils/elink.fcgi"
-)
+ESEARCH_URL = "https://eutils.ncbi.nlm.nih.gov/" "entrez/eutils/esearch.fcgi"
 
-ESEARCH_URL = (
-    "https://eutils.ncbi.nlm.nih.gov/"
-    "entrez/eutils/esearch.fcgi"
-)
-
-EFETCH_URL = (
-    "https://eutils.ncbi.nlm.nih.gov/"
-    "entrez/eutils/efetch.fcgi"
-)
+EFETCH_URL = "https://eutils.ncbi.nlm.nih.gov/" "entrez/eutils/efetch.fcgi"
 
 NCBI_TIMEOUT = 10
 
@@ -54,19 +44,13 @@ def _extract_elink_pmids(
 
     pmids = []
 
-    for linkset_db in root.findall(
-        ".//LinkSetDb"
-    ):
-        returned_linkname = linkset_db.findtext(
-            "LinkName"
-        )
+    for linkset_db in root.findall(".//LinkSetDb"):
+        returned_linkname = linkset_db.findtext("LinkName")
 
         if returned_linkname != linkname:
             continue
 
-        for id_element in linkset_db.findall(
-            "./Link/Id"
-        ):
+        for id_element in linkset_db.findall("./Link/Id"):
             if id_element.text:
                 pmids.append(id_element.text)
 
@@ -193,10 +177,7 @@ def fetch_pubmed_records(
 
     # Journal articles and book chapters such as GeneReviews
     # both carry PubMed IDs and are useful gene evidence.
-    articles = (
-            root.findall(".//PubmedArticle")
-            + root.findall(".//PubmedBookArticle")
-    )
+    articles = root.findall(".//PubmedArticle") + root.findall(".//PubmedBookArticle")
 
     for article in articles:
         pmid = article.findtext(".//PMID")
@@ -204,46 +185,31 @@ def fetch_pubmed_records(
         if not pmid:
             continue
 
-        title_element = article.find(
-            ".//ArticleTitle"
-        )
+        title_element = article.find(".//ArticleTitle")
 
         # Some PubMed book records may expose a book title
         # instead of an article/chapter title.
         if title_element is None:
-            title_element = article.find(
-                ".//BookTitle"
-            )
+            title_element = article.find(".//BookTitle")
 
-        title = (
-            "".join(title_element.itertext())
-            if title_element is not None
-            else ""
-        )
+        title = "".join(title_element.itertext()) if title_element is not None else ""
 
         abstract_parts = []
 
-        for abstract_text in article.findall(
-            ".//AbstractText"
-        ):
-            abstract_parts.append(
-                "".join(
-                    abstract_text.itertext()
-                )
-            )
+        for abstract_text in article.findall(".//AbstractText"):
+            abstract_parts.append("".join(abstract_text.itertext()))
 
         abstract = " ".join(abstract_parts)
 
-        records.append({
-            "id": f"PMID:{pmid}",
-            "source": "pubmed",
-            "title": title,
-            "text": abstract,
-            "url": (
-                "https://pubmed.ncbi.nlm.nih.gov/"
-                f"{pmid}/"
-            ),
-        })
+        records.append(
+            {
+                "id": f"PMID:{pmid}",
+                "source": "pubmed",
+                "title": title,
+                "text": abstract,
+                "url": ("https://pubmed.ncbi.nlm.nih.gov/" f"{pmid}/"),
+            }
+        )
 
     return records
 
@@ -270,24 +236,15 @@ def search_pubmed_by_text(
     NCBI Gene -> PubMed links.
     """
 
-    symbol = _escape_pubmed_phrase(
-        gene_symbol
-    )
+    symbol = _escape_pubmed_phrase(gene_symbol)
 
     if gene_name:
-        name = _escape_pubmed_phrase(
-            gene_name
-        )
+        name = _escape_pubmed_phrase(gene_name)
 
-        term = (
-            f'("{symbol}"[Title/Abstract] '
-            f'OR "{name}"[Title/Abstract])'
-        )
+        term = f'("{symbol}"[Title/Abstract] ' f'OR "{name}"[Title/Abstract])'
 
     else:
-        term = (
-            f'"{symbol}"[Title/Abstract]'
-        )
+        term = f'"{symbol}"[Title/Abstract]'
 
     params = {
         "db": "pubmed",
@@ -324,9 +281,7 @@ def _symbol_has_direct_gene_context(
     such as 'gene' somewhere else in the abstract.
     """
 
-    symbol = re.escape(
-        gene_symbol.lower()
-    )
+    symbol = re.escape(gene_symbol.lower())
 
     context_terms = (
         "gene",
@@ -355,27 +310,17 @@ def _symbol_has_direct_gene_context(
         "receptor",
     )
 
-    context_pattern = "|".join(
-        re.escape(term)
-        for term in context_terms
-    )
+    context_pattern = "|".join(re.escape(term) for term in context_terms)
 
     after_symbol = re.compile(
-        rf"\b{symbol}\b"
-        rf"[\s\-/:,()]{{1,12}}"
-        rf"\b(?:{context_pattern})\b"
+        rf"\b{symbol}\b" rf"[\s\-/:,()]{{1,12}}" rf"\b(?:{context_pattern})\b"
     )
 
     before_symbol = re.compile(
-        rf"\b(?:{context_pattern})\b"
-        rf"[\s\-/:,()]{{1,12}}"
-        rf"\b{symbol}\b"
+        rf"\b(?:{context_pattern})\b" rf"[\s\-/:,()]{{1,12}}" rf"\b{symbol}\b"
     )
 
-    return bool(
-        after_symbol.search(text)
-        or before_symbol.search(text)
-    )
+    return bool(after_symbol.search(text) or before_symbol.search(text))
 
 
 def _is_text_fallback_relevant(
@@ -394,19 +339,12 @@ def _is_text_fallback_relevant(
     title = record.get("title") or ""
     abstract = record.get("text") or ""
 
-    text = (
-        f"{title} {abstract}"
-    ).lower()
+    text = (f"{title} {abstract}").lower()
 
     if gene_name:
-        normalized_name = (
-            gene_name.lower().strip()
-        )
+        normalized_name = gene_name.lower().strip()
 
-        if (
-            len(normalized_name) >= 4
-            and normalized_name in text
-        ):
+        if len(normalized_name) >= 4 and normalized_name in text:
             return True
 
     return _symbol_has_direct_gene_context(
@@ -438,9 +376,7 @@ def retrieve_pubmed_text_fallback(
         max_results=candidate_count,
     )
 
-    records = fetch_pubmed_records(
-        pmids
-    )
+    records = fetch_pubmed_records(pmids)
 
     relevant_records = []
 
@@ -454,10 +390,7 @@ def retrieve_pubmed_text_fallback(
 
         relevant_records.append(record)
 
-        if (
-            len(relevant_records)
-            >= max_results
-        ):
+        if len(relevant_records) >= max_results:
             break
 
     return relevant_records
@@ -484,17 +417,13 @@ def retrieve_pubmed_evidence(
     """
 
     if entrez_id:
-        linked_pmids = (
-            get_prioritized_gene_pmids(
-                entrez_id=entrez_id,
-                max_results=max_results,
-            )
+        linked_pmids = get_prioritized_gene_pmids(
+            entrez_id=entrez_id,
+            max_results=max_results,
         )
 
         if linked_pmids:
-            return fetch_pubmed_records(
-                linked_pmids
-            )
+            return fetch_pubmed_records(linked_pmids)
 
     return retrieve_pubmed_text_fallback(
         gene_symbol=gene_symbol,

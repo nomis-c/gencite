@@ -8,7 +8,6 @@ layer 1 marks PMIDs that do not exist as invalid_id, layer 2 judges the real one
 Output mirrors a cli.py run (synth/, records/, verified/), so evaluate.py reads both the same way.
 """
 
-
 import argparse
 import re
 import shutil
@@ -54,23 +53,50 @@ def synthesize_baseline(symbol: str) -> SynthResult:
 
 def fetch_cited(synth: SynthResult) -> GeneRecord:
     """Evidence = the cited PMIDs that exist in PubMed. Missing or malformed IDs stay out, so layer 1 flags them."""
-    pmids = sorted({m.group(1) for c in synth.claims for i in c.evidence_ids if (m := PMID.match(i.strip()))})
+    pmids = sorted(
+        {
+            m.group(1)
+            for c in synth.claims
+            for i in c.evidence_ids
+            if (m := PMID.match(i.strip()))
+        }
+    )
     evidence = fetch_pubmed_records(pmids) if pmids else []
-    return GeneRecord.model_validate({"gene": GeneInfo(symbol=synth.gene).model_dump(), "evidence": evidence})
+    return GeneRecord.model_validate(
+        {"gene": GeneInfo(symbol=synth.gene).model_dump(), "evidence": evidence}
+    )
 
 
 def _save(folder: Path, name: str, obj) -> None:
     folder.mkdir(parents=True, exist_ok=True)
-    (folder / f"{name}.json").write_text(obj.model_dump_json(indent=2), encoding="utf-8")
+    (folder / f"{name}.json").write_text(
+        obj.model_dump_json(indent=2), encoding="utf-8"
+    )
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="Baseline: same LLM without retrieval, cited PMIDs checked afterwards")
+    ap = argparse.ArgumentParser(
+        description="Baseline: same LLM without retrieval, cited PMIDs checked afterwards"
+    )
     ap.add_argument("genes", type=Path, help="gene list (one symbol per line)")
-    ap.add_argument("--out", type=Path, help="output folder (default: results/<input name>/baseline)")
-    ap.add_argument("--no-judge", action="store_true", help="skip verifier layer 2 (fewer LLM calls)")
-    ap.add_argument("--no-cache", action="store_true", help="always call the LLM (nothing read or written)")
-    ap.add_argument("--dry-run", action="store_true", help="print the prompt, do not call the LLM")
+    ap.add_argument(
+        "--out",
+        type=Path,
+        help="output folder (default: results/<input name>/baseline)",
+    )
+    ap.add_argument(
+        "--no-judge",
+        action="store_true",
+        help="skip verifier layer 2 (fewer LLM calls)",
+    )
+    ap.add_argument(
+        "--no-cache",
+        action="store_true",
+        help="always call the LLM (nothing read or written)",
+    )
+    ap.add_argument(
+        "--dry-run", action="store_true", help="print the prompt, do not call the LLM"
+    )
     args = ap.parse_args()
     cache.ENABLED = not args.no_cache
 
@@ -83,7 +109,11 @@ def main() -> None:
             print(f"===== {s} =====\n{build_prompt(s)}")
         return
     out = args.out or Path("results") / args.genes.stem / "baseline"
-    for stage in STAGES:  # drop the last run, so a gene that fails now is missing instead of stale
+    for (
+        stage
+    ) in (
+        STAGES
+    ):  # drop the last run, so a gene that fails now is missing instead of stale
         shutil.rmtree(out / stage, ignore_errors=True)
 
     failed = unjudged = 0
@@ -92,7 +122,9 @@ def main() -> None:
             synth = synthesize_baseline(symbol)
             record = fetch_cited(synth)
             res = verify(synth, record, use_llm=not args.no_judge)
-        except Exception as err:  # LLM or PubMed error: skip this gene, keep the run going
+        except (
+            Exception
+        ) as err:  # LLM or PubMed error: skip this gene, keep the run going
             print(f"[{i}/{len(symbols)}] {symbol}: failed - {err}", file=sys.stderr)
             failed += 1
             continue
@@ -100,12 +132,20 @@ def main() -> None:
             _save(out / stage, symbol, obj)
         unjudged += judge_failures(res)
         fake = sum(c.verdict == "invalid_id" for c in res.claims)
-        print(f"[{i}/{len(symbols)}] {symbol}: {res.evidence_level}, {len(res.claims)} claims, "
-              f"{len(record.evidence)} cited PMIDs found in PubMed, {fake} claims with invalid IDs")
+        print(
+            f"[{i}/{len(symbols)}] {symbol}: {res.evidence_level}, {len(res.claims)} claims, "
+            f"{len(record.evidence)} cited PMIDs found in PubMed, {fake} claims with invalid IDs"
+        )
 
-    print(f"Wrote {len(symbols) - failed} baseline results to {out}/" + (f", {failed} genes failed" if failed else ""))
+    print(
+        f"Wrote {len(symbols) - failed} baseline results to {out}/"
+        + (f", {failed} genes failed" if failed else "")
+    )
     if unjudged:
-        print(f"{unjudged} claims could not be judged (marked unchecked) - rerun to retry them", file=sys.stderr)
+        print(
+            f"{unjudged} claims could not be judged (marked unchecked) - rerun to retry them",
+            file=sys.stderr,
+        )
     if failed or unjudged:
         sys.exit(1)
 

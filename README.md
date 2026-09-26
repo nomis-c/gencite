@@ -1,20 +1,52 @@
 # gencite
 
+*gene + cite*: cited, verified summaries for every gene in a gene list.
 
-## Motivation
+## Background
 
-Almost every omics analysis ends with a gene list that someone has to interpret: selection scans, RNA-seq, GWAS loci, CRISPR screens. Today that usually means looking up each gene by hand in PubMed and gene databases, which is slow. Asking a plain LLM instead is fast, but its answers cannot be traced back to a source and it invents citations.
+Almost every omics analysis ends with a gene list that someone has to interpret: the candidate genes of a selection scan, the loci of a GWAS, the hits of an RNA-seq or CRISPR screen. The next step is nearly always the same: look up every gene by hand in PubMed, NCBI Gene, Open Targets or the Human Protein Atlas, read abstracts, and write down what is known. For a list of 15–50 genes this takes hours to days, and it is repetitive work.
 
-## Goal
+It is also where the hard cases are. Lists from selection scans in particular contain many genes that are barely studied, plus pseudogenes, long non-coding RNAs and readthrough transcripts. For these, a search mostly returns papers about a related gene or papers that mention the gene only in passing, and telling the two apart takes expert time.
+
+## Why not just ask an LLM?
+
+A large language model answers the same question in seconds, but its answers are not reliable enough to use:
+
+- **Citations that do not back the claim.** Asked for sources, an LLM cites PMIDs from memory. They often exist, but are about something else entirely.
+- **Overstated findings.** An association becomes a cause, a mouse result becomes a human one, one study becomes a general fact.
+- **Wrong gene.** For a pseudogene or readthrough, the model describes the well-known parent or partner gene instead.
+- **No way to check.** Without a real source per statement, the reader has to redo the lookup anyway.
+
+We measured this on our test set (see [Results](#results)): the same LLM without retrieval knew the basic biology of well-described genes, but **84% of the PMIDs it cited never mention the gene**, and **not one of its claims** was backed by the paper it cited.
+
+## What gencite does
 
 `gencite` does the lookup and a first written summary for every gene, and makes each statement checkable:
 
-- **Every claim cites evidence.** The LLM may only use the retrieved evidence, and every claim names the PubMed, Open Targets or Human Protein Atlas record it is based on.
+- **Every claim cites evidence.** Evidence is retrieved first (PubMed, Open Targets, Human Protein Atlas, AMASS). The LLM may only use that evidence, and every claim names the record it is based on.
 - **Every citation is checked in code.** A claim that cites an ID not retrieved for that gene is flagged (`invalid_id`).
 - **Every claim is checked against its source.** A second LLM call (the judge) reads the claim and only the evidence it cites, and rates it `supported`, `partial` or `unsupported` with a one-line reason.
 - **Honest about missing evidence.** Genes without usable evidence (unresolved symbols, most pseudogenes) get no claims and a note that says why.
 
-The result is one Markdown report that a scientist can read and verify, with a link to every source.
+The result is one report per gene list that a scientist can read and verify, with a link to every source: as a Markdown file from the command line, or as cards in a web interface.
+
+`gencite` does not replace reading the sources. It turns hours of searching into minutes of checking.
+
+## Results
+
+Test set: five well-described genes (LCT, IRGM, SPG7, HBG2, ERAP2) and three negative controls (the pseudogenes MAGOH2P and NOC2LP2, and ABCXYZ, a symbol that does not exist). The baseline is the same LLM (`deepseek-chat`) without retrieval; both are checked by the same verifier and judge (`deepseek-reasoner`).
+
+| Metric | gencite | LLM without retrieval |
+|---|---|---|
+| Claims | 27 | 25 |
+| Cited PMIDs that never mention the gene | 0% (0/14) | 84% (16/19) |
+| Claims judged `supported` by their cited source | 93% (25/27) | 0% (0/25) |
+| Claims judged `partial` | 7% (2/27) | 16% (4/25) |
+| Claims judged `unsupported` | 0% | 84% (21/25) |
+| Well-described genes: expected biology mentioned | 5/5 | 5/5 |
+| Negative controls: no invented function | 3/3 | 3/3 |
+
+Both know the biology of well-described genes; the difference is that every `gencite` claim can be traced to a source that says it. Retrieval uses live APIs, so numbers can shift slightly between runs. Reproduce with the commands in [Evaluation against a baseline](#evaluation-against-a-baseline).
 
 ## How it works
 
@@ -24,28 +56,30 @@ The result is one Markdown report that a scientist can read and verify, with a l
 |---|---|---|---|
 | Process input file | read the list; header line, comments, blanks and duplicates are removed | – | `inputs.py` |
 | Get gene ID & gene type | symbol → Ensembl / Entrez ID and gene type. Symbol not found → evidence level `none`, no LLM call | MyGene.info | `ids.py` |
-| Retrieve evidence | top 5 abstracts that mention the gene | PubMed (NCBI E-utilities) | `pubmed_retrieval.py` |
+| Retrieve evidence | up to 5 abstracts: papers NCBI links to the gene first; if there are none, a text search with a relevance filter | PubMed (NCBI E-utilities) | `pubmed_retrieval.py` |
 | | gene biotype and top 5 disease associations | Open Targets | `opentargets.py` |
 | | tissue and cell-type expression, biological process, molecular function, disease involvement | Human Protein Atlas | `hpa_retrieval.py` |
-| Evidence record per gene | all items of a gene, each with an ID (`PMID:…`, `OT:…`, `HPA:…`). No evidence → `none`, no LLM call | – | `collect_evidence.py` |
+| | gene summary (RefSeq), protein function (UniProt), up to 3 relevant publications | AMASS GeneCore + BiomedCore (needs `AMASS_API_KEY`) | `amass_retrieval.py` |
+| Evidence record per gene | all items of a gene, each with an ID (`PMID:…`, `OT:…`, `HPA:…`, `AMASS:…`), duplicates removed. No evidence → `none`, no LLM call | – | `collect_evidence.py` |
 | **Synthesizer** (LLM) | up to 5 short claims, each citing evidence IDs, plus an evidence level `sufficient` / `limited` / `none` | LLM | `synth_LLM.py` |
 | Verifier 1 · ID check | every cited ID must be in this gene's evidence, otherwise `invalid_id` (`X`) and the claim is not judged | – | `verify.py` |
 | **Verifier 2 · Judge** (LLM) | reads the claim and only the evidence it cites → `supported` / `partial` / `unsupported` with a one-line reason | LLM (can be a different model) | `verify.py` |
 | Gene report | summary table + one section per gene: gene type, claims, status, source links, all retrieved evidence | – | `create_report.py` |
 
-Retrieval sources are independent: if one fails or has no entry for a gene (e.g. a pseudogene missing in the Human Protein Atlas), the gene continues with the others.
+All pipeline code is in the `gencite/` package (see [Project structure](#project-structure)). Retrieval sources are independent: if one fails or has no entry for a gene (e.g. a pseudogene missing in the Human Protein Atlas), the gene continues with the others.
 
 ## Requirements
 
 - Python 3.10 or newer
 - Internet access to MyGene.info, NCBI E-utilities, the Open Targets API and the Human Protein Atlas (all free, no key needed)
 - An API key for an OpenAI-compatible LLM endpoint (DeepSeek, Groq, Gemini, OpenAI, a local Ollama server, …)
+- Optional: an AMASS API key for the AMASS evidence source
 
 Python packages (`requirement.txt`):
 
 | Package | Used for |
 |---|---|
-| `requests` | MyGene.info, PubMed, Open Targets and Human Protein Atlas calls |
+| `requests` | MyGene.info, PubMed, Open Targets, Human Protein Atlas and AMASS calls |
 | `openai` | LLM calls (any OpenAI-compatible endpoint) |
 | `pydantic` | data schemas and validation of the LLM output |
 | `python-dotenv` | reading the configuration from `.env` |
@@ -74,12 +108,20 @@ cp .env.example .env               # then fill in LLM_API_KEY
 
 | Variable | Required | Meaning |
 |---|---|---|
-| `LLM_BASE_URL` | no (default `https://api.deepseek.com`) | endpoint for the synthesizer |
-| `LLM_MODEL` | no (default `deepseek-chat`) | model for the synthesizer |
-| `LLM_API_KEY` | **yes** | API key |
+| `LLM_API_KEY` | **yes** | API key of the LLM provider |
+| `LLM_BASE_URL` | only if not DeepSeek (default `https://api.deepseek.com`) | OpenAI-compatible endpoint of the provider |
+| `LLM_MODEL` | only if not DeepSeek (default `deepseek-chat`) | model for the synthesizer (and the judge, unless `JUDGE_MODEL` is set) |
 | `JUDGE_BASE_URL`, `JUDGE_MODEL`, `JUDGE_API_KEY` | no | a different model as judge; each empty value falls back to `LLM_*` |
 | `AMASS_API_KEY` | no | AMASS GeneCore + BiomedCore evidence; without it the AMASS source is skipped |
 | `GENCITE_NO_CACHE` | no | `1` turns the cache off (same as `--no-cache`) |
+
+With a DeepSeek key, `LLM_API_KEY` is the only line you need. For any other provider set all three `LLM_*` values, e.g. for Google Gemini:
+
+```
+LLM_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/
+LLM_MODEL=gemini-2.5-flash
+LLM_API_KEY=<your key>
+```
 
 ## Usage
 
@@ -150,6 +192,14 @@ Exit code 1 means some genes or claims failed, usually because of an LLM rate li
 
 ## Testing
 
+Automated tests run offline: no API key, no network, no LLM calls, about a second.
+
+```bash
+pip install -r requirement_dev.txt                # once: requirement.txt + pytest + black
+python -m pytest                                  # tests/ (also run by GitHub Actions on every push and pull request)
+black --check gencite/ streamlit_app.py tests/    # formatting
+```
+
 `test_data/` is the test data set:
 
 | Path | Content | Used by |
@@ -193,14 +243,15 @@ gencite/               the pipeline (Python package)
   llm_client.py        LLM calls: config from .env, retries, JSON validation, cache
   cache.py             disk cache in data/cache/
 test_data/             test data set: gene list, dummy evidence, wrong claims, evaluation set
+tests/                 offline pytest suite
 results/               everything the pipeline generates (git-ignored)
 ```
 
 ## Known limitations
 
-- Retrieval does not fetch the Open Targets function text, so many genes only get association-level claims (`limited`).
 - The gene type comes straight from MyGene.info: readthroughs show as `protein-coding`, pseudogenes as `unknown`.
-- The PubMed search has no filter, so reviews that only mention a gene in passing are common.
+- Genes without papers linked in NCBI Gene fall back to a PubMed text search; its relevance filter is conservative, but reviews that only mention a gene in passing can still get through.
 - Non-human studies are not filtered out (e.g. MYOZ3: chicken, rat, horse), and claims do not always name the species.
-- Only LLM calls are cached; MyGene, PubMed, Open Targets and the Human Protein Atlas are called again on every run.
+- Only LLM calls are cached; MyGene, PubMed, Open Targets, the Human Protein Atlas and AMASS are called again on every run, so the retrieved evidence (and with it the claims) can change slightly between runs.
+- The test set is small (8 genes): enough to show the difference to a plain LLM, not to give precise error rates. Agreement between the judge and a human reviewer has not been measured yet.
 - The judge is an LLM too: it can miss an overstated claim, so `supported` means "the judge found it in the cited text", not "proven".

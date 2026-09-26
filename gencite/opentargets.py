@@ -1,12 +1,10 @@
 import requests
 
-
 OPENTARGETS_URL = "https://api.platform.opentargets.org/api/v4/graphql"
 
 
 def retrieve_open_targets_evidence(
-    ensembl_id: str,
-    max_diseases: int = 5
+    ensembl_id: str, max_diseases: int = 5
 ) -> list[dict]:
 
     query = """
@@ -56,17 +54,19 @@ def retrieve_open_targets_evidence(
     evidence = []
 
     # Basic target information
-    evidence.append({
-        "id": f"OT:target:{target['id']}",
-        "source": "open_targets",
-        "title": f"Target information for {target.get('approvedSymbol', ensembl_id)}",
-        "text": (
-            f"{target.get('approvedSymbol', ensembl_id)} "
-            f"is annotated as gene biotype: "
-            f"{target.get('biotype', 'unknown')}."
-        ),
-        "url": f"https://platform.opentargets.org/target/{target['id']}",
-    })
+    evidence.append(
+        {
+            "id": f"OT:target:{target['id']}",
+            "source": "open_targets",
+            "title": f"Target information for {target.get('approvedSymbol', ensembl_id)}",
+            "text": (
+                f"{target.get('approvedSymbol', ensembl_id)} "
+                f"is annotated as gene biotype: "
+                f"{target.get('biotype', 'unknown')}."
+            ),
+            "url": f"https://platform.opentargets.org/target/{target['id']}",
+        }
+    )
 
     # Disease associations
     rows = target.get("associatedDiseases", {}).get("rows", [])
@@ -86,23 +86,24 @@ def retrieve_open_targets_evidence(
         if not disease_id or not disease_name:
             continue
 
-        evidence.append({
-            "id": f"OT:disease:{target['id']}:{disease_id}",
-            "source": "open_targets",
-            "title": f"Disease association: {disease_name}",
-            "text": (
-                f"{target.get('approvedSymbol', ensembl_id)} is associated with "
-                f"{disease_name} in Open Targets "
-                f"(association score: {score:.3f})."
-                if score is not None
-                else
-                f"{target.get('approvedSymbol', ensembl_id)} is associated with "
-                f"{disease_name} in Open Targets."
-            ),
-            "url": (
-                f"https://platform.opentargets.org/target/"
-                f"{target['id']}/associations"
-            ),
-        })
+        evidence.append(
+            {
+                "id": f"OT:disease:{target['id']}:{disease_id}",
+                "source": "open_targets",
+                "title": f"Disease association: {disease_name}",
+                "text": (
+                    f"{target.get('approvedSymbol', ensembl_id)} is associated with "
+                    f"{disease_name} in Open Targets "
+                    f"(association score: {score:.3f})."
+                    if score is not None
+                    else f"{target.get('approvedSymbol', ensembl_id)} is associated with "
+                    f"{disease_name} in Open Targets."
+                ),
+                "url": (
+                    f"https://platform.opentargets.org/target/"
+                    f"{target['id']}/associations"
+                ),
+            }
+        )
 
     return evidence

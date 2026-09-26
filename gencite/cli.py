@@ -7,7 +7,6 @@
 Each run writes to its own folder (results/<input name>/ or --out) and clears that folder's old results first.
 """
 
-
 import argparse
 import shutil
 import sys
@@ -27,7 +26,9 @@ def fetch_records(gene_file: Path) -> list[GeneRecord]:
         from gencite.ids import resolve_gene_id
         from gencite.inputs import parse_gene_list
     except ModuleNotFoundError as err:
-        sys.exit(f"Retrieval modules missing ({err.name}.py) - run on a GeneRecord folder instead, e.g. test_data/")
+        sys.exit(
+            f"Retrieval modules missing ({err.name}.py) - run on a GeneRecord folder instead, e.g. test_data/"
+        )
 
     symbols = parse_gene_list(gene_file.read_text(encoding="utf-8"))
     records = []
@@ -35,11 +36,19 @@ def fetch_records(gene_file: Path) -> list[GeneRecord]:
         try:
             raw = collect_evidence(resolve_gene_id(symbol))
             rec = GeneRecord.model_validate(raw)
-        except Exception as err:  # network / API errors or malformed evidence: report and go on with the next gene
-            print(f"[{i}/{len(symbols)}] {symbol}: retrieval failed - {err}", file=sys.stderr)
+        except (
+            Exception
+        ) as err:  # network / API errors or malformed evidence: report and go on with the next gene
+            print(
+                f"[{i}/{len(symbols)}] {symbol}: retrieval failed - {err}",
+                file=sys.stderr,
+            )
             continue
         for e in raw.get("errors", []):
-            print(f"[{i}/{len(symbols)}] {symbol}: {e['source']} - {e['message']}", file=sys.stderr)
+            print(
+                f"[{i}/{len(symbols)}] {symbol}: {e['source']} - {e['message']}",
+                file=sys.stderr,
+            )
         print(f"[{i}/{len(symbols)}] {symbol}: {len(rec.evidence)} evidence items")
         records.append(rec)
     return records
@@ -53,7 +62,9 @@ def run_gene(record: GeneRecord, use_judge: bool) -> tuple[SynthResult, VerifyRe
 
 def _save(folder: Path, name: str, obj) -> None:
     folder.mkdir(parents=True, exist_ok=True)
-    (folder / f"{name}.json").write_text(obj.model_dump_json(indent=2), encoding="utf-8")
+    (folder / f"{name}.json").write_text(
+        obj.model_dump_json(indent=2), encoding="utf-8"
+    )
 
 
 STAGE_OUTPUTS = ("records", "synth", "verified", "report.md")
@@ -70,11 +81,27 @@ def clear_run_folder(out: Path, keep: Path) -> None:
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="gencite: cited, verified gene summaries from a gene list")
-    ap.add_argument("input", type=Path, help="gene list (one symbol per line) or folder of GeneRecord JSONs")
-    ap.add_argument("--out", type=Path, help="output folder (default: results/<input name>)")
-    ap.add_argument("--no-judge", action="store_true", help="skip verifier layer 2 (fewer LLM calls)")
-    ap.add_argument("--no-cache", action="store_true", help="always call the APIs and the LLM (nothing read or written)")
+    ap = argparse.ArgumentParser(
+        description="gencite: cited, verified gene summaries from a gene list"
+    )
+    ap.add_argument(
+        "input",
+        type=Path,
+        help="gene list (one symbol per line) or folder of GeneRecord JSONs",
+    )
+    ap.add_argument(
+        "--out", type=Path, help="output folder (default: results/<input name>)"
+    )
+    ap.add_argument(
+        "--no-judge",
+        action="store_true",
+        help="skip verifier layer 2 (fewer LLM calls)",
+    )
+    ap.add_argument(
+        "--no-cache",
+        action="store_true",
+        help="always call the APIs and the LLM (nothing read or written)",
+    )
     args = ap.parse_args()
     cache.ENABLED = not args.no_cache
 
@@ -83,7 +110,9 @@ def main() -> None:
     args.out = args.out or Path("results") / args.input.stem
     if args.input.is_dir():
         records = load_records([args.input])
-        print(f"{len(records)} GeneRecords from {args.input}/ (no retrieval) -> {args.out}/")
+        print(
+            f"{len(records)} GeneRecords from {args.input}/ (no retrieval) -> {args.out}/"
+        )
         clear_run_folder(args.out, keep=args.input)
     else:
         records = fetch_records(args.input)
@@ -98,7 +127,9 @@ def main() -> None:
         symbol = rec.gene.symbol
         try:
             synth, res = run_gene(rec, use_judge=not args.no_judge)
-        except Exception as err:  # synthesis failed (LLM error, rate limit): skip this gene, keep the run going
+        except (
+            Exception
+        ) as err:  # synthesis failed (LLM error, rate limit): skip this gene, keep the run going
             print(f"[{i}/{len(records)}] {symbol}: failed - {err}", file=sys.stderr)
             failed += 1
             continue
@@ -107,18 +138,28 @@ def main() -> None:
         unjudged += judge_failures(res)
         n = counts(res)
         marks = " ".join(f"{n[v]}{MARK[v]}" for v in n if n[v])
-        print(f"[{i}/{len(records)}] {symbol}: {res.evidence_level}, {len(res.claims)} claims" + (f" ({marks})" if marks else ""))
+        print(
+            f"[{i}/{len(records)}] {symbol}: {res.evidence_level}, {len(res.claims)} claims"
+            + (f" ({marks})" if marks else "")
+        )
         results.append(res)
 
     if results:
         report = args.out / "report.md"
-        report.write_text(build_report(results, {r.gene.symbol: r for r in records}), encoding="utf-8")
+        report.write_text(
+            build_report(results, {r.gene.symbol: r for r in records}), encoding="utf-8"
+        )
         print_summary(results)
         print(f"Wrote {report}" + (f", {failed} genes failed" if failed else ""))
     if cache.ENABLED:
-        print(f"Cache: {cache.stats['hits']} hits, {cache.stats['misses']} new calls ({cache.CACHE_DIR})")
+        print(
+            f"Cache: {cache.stats['hits']} hits, {cache.stats['misses']} new calls ({cache.CACHE_DIR})"
+        )
     if unjudged:
-        print(f"{unjudged} claims could not be judged (marked unchecked) - rerun to retry them", file=sys.stderr)
+        print(
+            f"{unjudged} claims could not be judged (marked unchecked) - rerun to retry them",
+            file=sys.stderr,
+        )
     if failed or unjudged:
         sys.exit(1)
 

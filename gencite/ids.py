@@ -2,7 +2,6 @@ import time
 
 import requests
 
-
 MYGENE_URL = "https://mygene.info/v3/query"
 
 MYGENE_TIMEOUT = 10
@@ -62,33 +61,18 @@ def _get_with_retries(
                 raise
 
         except requests.exceptions.HTTPError as exc:
-            status_code = (
-                exc.response.status_code
-                if exc.response is not None
-                else None
+            status_code = exc.response.status_code if exc.response is not None else None
+
+            retryable = status_code == 429 or (
+                status_code is not None and 500 <= status_code < 600
             )
 
-            retryable = (
-                status_code == 429
-                or (
-                    status_code is not None
-                    and 500 <= status_code < 600
-                )
-            )
-
-            if (
-                not retryable
-                or attempt == MYGENE_MAX_RETRIES
-            ):
+            if not retryable or attempt == MYGENE_MAX_RETRIES:
                 raise
 
-        time.sleep(
-            MYGENE_RETRY_BACKOFF * (attempt + 1)
-        )
+        time.sleep(MYGENE_RETRY_BACKOFF * (attempt + 1))
 
-    raise RuntimeError(
-        "MyGene request failed after retries."
-    )
+    raise RuntimeError("MyGene request failed after retries.")
 
 
 def resolve_gene_id(symbol: str) -> dict:
@@ -103,10 +87,7 @@ def resolve_gene_id(symbol: str) -> dict:
     params = {
         "q": f"symbol:{symbol}",
         "species": "human",
-        "fields": (
-            "symbol,name,ensembl.gene,"
-            "entrezgene,type_of_gene"
-        ),
+        "fields": ("symbol,name,ensembl.gene," "entrezgene,type_of_gene"),
         "size": 5,
     }
 
@@ -119,20 +100,13 @@ def resolve_gene_id(symbol: str) -> dict:
 
     for hit in data.get("hits", []):
         # Make sure we actually got the requested human gene symbol.
-        if (
-            hit.get("symbol", "").upper()
-            == symbol.upper()
-        ):
+        if hit.get("symbol", "").upper() == symbol.upper():
             return {
                 "symbol": hit.get("symbol", symbol),
                 "name": hit.get("name"),
-                "ensembl_id": _extract_ensembl_id(
-                    hit.get("ensembl")
-                ),
+                "ensembl_id": _extract_ensembl_id(hit.get("ensembl")),
                 "entrez_id": (
-                    str(hit["entrezgene"])
-                    if hit.get("entrezgene")
-                    else None
+                    str(hit["entrezgene"]) if hit.get("entrezgene") else None
                 ),
                 "gene_type": hit.get("type_of_gene"),
                 "found": True,
@@ -152,7 +126,4 @@ def resolve_gene_ids(
     symbols: list[str],
 ) -> list[dict]:
     """Resolve a list of human gene symbols."""
-    return [
-        resolve_gene_id(symbol)
-        for symbol in symbols
-    ]
+    return [resolve_gene_id(symbol) for symbol in symbols]

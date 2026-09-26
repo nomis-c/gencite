@@ -1,6 +1,5 @@
 """Step 6: Synthesizer. Reads one gene's evidence and writes short claims, each citing evidence IDs."""
 
-
 import argparse
 import sys
 from pathlib import Path
@@ -35,7 +34,14 @@ class LLMOutput(BaseModel):
 
 def build_prompt(record: GeneRecord) -> str:
     g = record.gene
-    lines = ["GENE:", g.symbol, f"Gene type: {g.gene_type or 'unknown'}", "", "EVIDENCE:", ""]
+    lines = [
+        "GENE:",
+        g.symbol,
+        f"Gene type: {g.gene_type or 'unknown'}",
+        "",
+        "EVIDENCE:",
+        "",
+    ]
     for e in record.evidence:
         lines.append(f"[{e.id}]")
         if e.title:
@@ -49,9 +55,17 @@ def synthesize(record: GeneRecord) -> SynthResult:
     """Claims with evidence_ids. Unresolved gene or no evidence -> no LLM call, no claims."""
     symbol = record.gene.symbol
     if not record.gene.found:
-        return SynthResult(gene=symbol, evidence_level="none", note="Gene symbol could not be resolved.")
+        return SynthResult(
+            gene=symbol,
+            evidence_level="none",
+            note="Gene symbol could not be resolved.",
+        )
     if not record.evidence:
-        return SynthResult(gene=symbol, evidence_level="none", note="No evidence retrieved for this gene.")
+        return SynthResult(
+            gene=symbol,
+            evidence_level="none",
+            note="No evidence retrieved for this gene.",
+        )
     out = llm_json(build_prompt(record), SYSTEM, LLMOutput, role="synth")
     if out.evidence_level == "none":
         out.claims = []  # keep "none" consistent even if the model still wrote claims
@@ -62,14 +76,22 @@ def load_records(paths: list[Path]) -> list[GeneRecord]:
     files = []
     for p in paths:
         files += sorted(p.glob("*.json")) if p.is_dir() else [p]
-    return [GeneRecord.model_validate_json(f.read_text(encoding="utf-8")) for f in files]
+    return [
+        GeneRecord.model_validate_json(f.read_text(encoding="utf-8")) for f in files
+    ]
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="LLM synthesizer: evidence -> cited claims")
-    ap.add_argument("inputs", nargs="+", type=Path, help="GeneRecord JSON files or folders")
+    ap = argparse.ArgumentParser(
+        description="LLM synthesizer: evidence -> cited claims"
+    )
+    ap.add_argument(
+        "inputs", nargs="+", type=Path, help="GeneRecord JSON files or folders"
+    )
     ap.add_argument("--out", type=Path, default=Path("results/steps/synth"))
-    ap.add_argument("--dry-run", action="store_true", help="print prompts, do not call the LLM")
+    ap.add_argument(
+        "--dry-run", action="store_true", help="print prompts, do not call the LLM"
+    )
     args = ap.parse_args()
 
     records = load_records(args.inputs)
@@ -87,11 +109,16 @@ def main() -> None:
             print(f"{r.gene.symbol}: synthesis failed - {err}", file=sys.stderr)
             failed += 1
             continue
-        (args.out / f"{r.gene.symbol}.json").write_text(res.model_dump_json(indent=2), encoding="utf-8")
+        (args.out / f"{r.gene.symbol}.json").write_text(
+            res.model_dump_json(indent=2), encoding="utf-8"
+        )
         print(f"\n{res.gene} [{res.evidence_level}] {res.note}")
         for c in res.claims:
             print(f"  - {c.text} {c.evidence_ids}")
-    print(f"\nWrote {len(records) - failed} results to {args.out}/" + (f", {failed} failed" if failed else ""))
+    print(
+        f"\nWrote {len(records) - failed} results to {args.out}/"
+        + (f", {failed} failed" if failed else "")
+    )
     if failed:
         sys.exit(1)
 
