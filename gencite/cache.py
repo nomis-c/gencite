@@ -5,6 +5,7 @@ Only successful results are stored, so errors and invalid LLM output are retried
 API keys are never part of the hash or the file.
 Turn off with GENCITE_NO_CACHE=1 or `python -m gencite --no-cache`. `python -m gencite.cache` shows stats, `--clear` deletes it.
 """
+
 import hashlib
 import json
 import os
@@ -13,7 +14,9 @@ from pathlib import Path
 
 import requests
 
-CACHE_DIR = Path(__file__).parent.parent / "data" / "cache"  # repo root, next to results/
+CACHE_DIR = (
+    Path(__file__).parent.parent / "data" / "cache"
+)  # repo root, next to results/
 ENABLED = os.getenv("GENCITE_NO_CACHE") != "1"
 SECRET_PARAMS = {"api_key", "apikey", "key", "token"}
 stats = {"hits": 0, "misses": 0}
@@ -31,7 +34,11 @@ def get(kind: str, request: dict):
     p = _path(kind, request)
     try:
         value = json.loads(p.read_text(encoding="utf-8"))["value"]
-    except (FileNotFoundError, json.JSONDecodeError, KeyError):  # missing or damaged file = miss
+    except (
+        FileNotFoundError,
+        json.JSONDecodeError,
+        KeyError,
+    ):  # missing or damaged file = miss
         stats["misses"] += 1
         return None
     stats["hits"] += 1
@@ -43,12 +50,18 @@ def put(kind: str, request: dict, value) -> None:
         return
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     p = _path(kind, request)
-    tmp = p.with_suffix(".tmp")  # write then rename, so an aborted run leaves no half file
-    tmp.write_text(json.dumps({"request": request, "value": value}, ensure_ascii=False, indent=1), encoding="utf-8")
+    tmp = p.with_suffix(
+        ".tmp"
+    )  # write then rename, so an aborted run leaves no half file
+    tmp.write_text(
+        json.dumps({"request": request, "value": value}, ensure_ascii=False, indent=1),
+        encoding="utf-8",
+    )
     tmp.replace(p)
 
 
 # HTTP
+
 
 class CachedResponse:
     """The parts of requests.Response the retrieval code uses."""

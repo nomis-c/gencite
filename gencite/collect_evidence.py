@@ -3,8 +3,9 @@ from gencite.opentargets import retrieve_open_targets_evidence
 from gencite.hpa_retrieval import retrieve_hpa_evidence
 from gencite.amass_retrieval import retrieve_amass_evidence
 
-
-DEFAULT_EVIDENCE_SOURCES = frozenset({"pubmed", "open_targets", "human_protein_atlas", "amass"})
+DEFAULT_EVIDENCE_SOURCES = frozenset(
+    {"pubmed", "open_targets", "human_protein_atlas", "amass"}
+)
 
 Sources = set[str] | frozenset[str] | None
 
@@ -23,7 +24,8 @@ def _normalize_enabled_sources(enabled_sources: Sources) -> set[str]:
     unknown = enabled - DEFAULT_EVIDENCE_SOURCES
     if unknown:
         raise ValueError(
-            f"Unknown evidence source{'s' if len(unknown) != 1 else ''}: " + ", ".join(sorted(unknown))
+            f"Unknown evidence source{'s' if len(unknown) != 1 else ''}: "
+            + ", ".join(sorted(unknown))
         )
     return enabled
 
@@ -128,14 +130,21 @@ def collect_evidence(
         "gene": gene_info,
         "evidence": [],
         "errors": [],
-        "source_counts": {"pubmed": 0, "open_targets": 0, "human_protein_atlas": 0, "amass": 0},
+        "source_counts": {
+            "pubmed": 0,
+            "open_targets": 0,
+            "human_protein_atlas": 0,
+            "amass": 0,
+        },
         "evidence_count": 0,
     }
 
     # If the gene could not be resolved,
     # there is nothing useful to query.
     if not gene_info.get("found"):
-        record["errors"].append({"source": "gene_resolution", "message": "Gene could not be resolved."})
+        record["errors"].append(
+            {"source": "gene_resolution", "message": "Gene could not be resolved."}
+        )
         return record
 
     gene_symbol = gene_info.get("symbol")
@@ -157,14 +166,34 @@ def collect_evidence(
 
     no_ensembl = None if ensembl_id else "No Ensembl ID available for this gene."
 
-    add("pubmed", lambda: retrieve_pubmed_evidence(
-        gene_symbol=gene_symbol, gene_name=gene_name, entrez_id=entrez_id, max_results=max_pubmed_results))
-    add("open_targets", lambda: retrieve_open_targets_evidence(ensembl_id, max_diseases=max_diseases),
-        missing=no_ensembl)
-    add("human_protein_atlas", lambda: retrieve_hpa_evidence(ensembl_id), missing=no_ensembl)
-    add("amass", lambda: retrieve_amass_evidence(
-        gene_symbol=gene_symbol, ensembl_id=ensembl_id, max_biomed_results=max_amass_biomed_results),
-        missing=None if gene_symbol else "No gene symbol available for this gene.")
+    add(
+        "pubmed",
+        lambda: retrieve_pubmed_evidence(
+            gene_symbol=gene_symbol,
+            gene_name=gene_name,
+            entrez_id=entrez_id,
+            max_results=max_pubmed_results,
+        ),
+    )
+    add(
+        "open_targets",
+        lambda: retrieve_open_targets_evidence(ensembl_id, max_diseases=max_diseases),
+        missing=no_ensembl,
+    )
+    add(
+        "human_protein_atlas",
+        lambda: retrieve_hpa_evidence(ensembl_id),
+        missing=no_ensembl,
+    )
+    add(
+        "amass",
+        lambda: retrieve_amass_evidence(
+            gene_symbol=gene_symbol,
+            ensembl_id=ensembl_id,
+            max_biomed_results=max_amass_biomed_results,
+        ),
+        missing=None if gene_symbol else "No gene symbol available for this gene.",
+    )
 
     record["evidence"] = _deduplicate_evidence(record["evidence"])
     record["source_counts"] = _count_sources(record["evidence"])

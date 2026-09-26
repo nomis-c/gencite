@@ -18,7 +18,6 @@ from gencite.schema import GeneRecord
 from gencite.synth_LLM import synthesize
 from gencite.verify import JUDGE_FAILED, verify
 
-
 # ---------------------------------------------------------
 # Streamlit page configuration
 # ---------------------------------------------------------
@@ -42,18 +41,10 @@ SOURCE_LABELS = {
 }
 
 SOURCE_DESCRIPTIONS = {
-    "pubmed": (
-        "Gene-linked scientific literature from NCBI PubMed."
-    ),
-    "open_targets": (
-        "Structured target information and disease associations."
-    ),
-    "human_protein_atlas": (
-        "Tissue, cell-type, and biological annotation."
-    ),
-    "amass": (
-        "AMASS GeneCore annotations and BiomedCore literature."
-    ),
+    "pubmed": ("Gene-linked scientific literature from NCBI PubMed."),
+    "open_targets": ("Structured target information and disease associations."),
+    "human_protein_atlas": ("Tissue, cell-type, and biological annotation."),
+    "amass": ("AMASS GeneCore annotations and BiomedCore literature."),
 }
 
 SOURCE_ORDER = [
@@ -141,6 +132,7 @@ st.markdown(
 # Helper functions
 # ---------------------------------------------------------
 
+
 def escape_markdown(text: str) -> str:
     """
     Show text literally in st.markdown.
@@ -202,9 +194,7 @@ def count_record_sources(
     counts = Counter()
 
     for item in record.evidence:
-        counts[
-            evidence_source_group(item.source)
-        ] += 1
+        counts[evidence_source_group(item.source)] += 1
 
     return counts
 
@@ -217,27 +207,17 @@ def evidence_links_for_claim(
     Create clickable evidence links for one verified claim.
     """
 
-    evidence_by_id = {
-        item.id: item
-        for item in record.evidence
-    }
+    evidence_by_id = {item.id: item for item in record.evidence}
 
     links = []
 
     for evidence_id in claim.evidence_ids:
-        evidence = evidence_by_id.get(
-            evidence_id
-        )
+        evidence = evidence_by_id.get(evidence_id)
 
         if evidence and evidence.url:
-            links.append(
-                f"[`{evidence_id}`]"
-                f"({evidence.url})"
-            )
+            links.append(f"[`{evidence_id}`]" f"({evidence.url})")
         else:
-            links.append(
-                f"`{evidence_id}`"
-            )
+            links.append(f"`{evidence_id}`")
 
     return ", ".join(links)
 
@@ -262,9 +242,7 @@ def run_analysis(
     pipeline_errors = {}
     gene_names = {}
 
-    llm_configured = bool(
-        os.getenv("LLM_API_KEY")
-    )
+    llm_configured = bool(os.getenv("LLM_API_KEY"))
 
     progress = st.progress(
         0.0,
@@ -281,11 +259,7 @@ def run_analysis(
     ):
         progress.progress(
             (index - 1) / total,
-            text=(
-                f"Retrieving evidence for "
-                f"{symbol} "
-                f"({index}/{total})..."
-            ),
+            text=(f"Retrieving evidence for " f"{symbol} " f"({index}/{total})..."),
         )
 
         # Start with the uploaded symbol.
@@ -294,44 +268,29 @@ def run_analysis(
         resolved_symbol = symbol
 
         try:
-            gene_info = resolve_gene_id(
-                symbol
-            )
+            gene_info = resolve_gene_id(symbol)
 
-            resolved_symbol = (
-                    gene_info.get("symbol")
-                    or symbol
-            )
+            resolved_symbol = gene_info.get("symbol") or symbol
 
             if resolved_symbol in seen_resolved_symbols:
                 progress.progress(
                     index / total,
                     text=(
-                        f"Skipped duplicate "
-                        f"{resolved_symbol} "
-                        f"({index}/{total})"
+                        f"Skipped duplicate " f"{resolved_symbol} " f"({index}/{total})"
                     ),
                 )
                 continue
 
-            seen_resolved_symbols.add(
-                resolved_symbol
-            )
+            seen_resolved_symbols.add(resolved_symbol)
 
-            gene_names[
-                resolved_symbol
-            ] = gene_info.get(
-                "name"
-            )
+            gene_names[resolved_symbol] = gene_info.get("name")
 
             raw = collect_evidence(
                 gene_info,
                 enabled_sources=enabled_sources,
             )
 
-            record = GeneRecord.model_validate(
-                raw
-            )
+            record = GeneRecord.model_validate(raw)
 
             records.append(record)
 
@@ -341,26 +300,16 @@ def run_analysis(
             )
 
             if errors:
-                source_errors[
-                    resolved_symbol
-                ] = errors
+                source_errors[resolved_symbol] = errors
 
         except Exception as exc:
-            pipeline_errors[
-                resolved_symbol
-            ] = [
-                (
-                    "Retrieval failed: "
-                    f"{type(exc).__name__}: "
-                    f"{exc}"
-                )
+            pipeline_errors[resolved_symbol] = [
+                "Retrieval failed: " f"{type(exc).__name__}: " f"{exc}"
             ]
 
             progress.progress(
                 index / total,
-                text=(
-                    f"Finished {index}/{total}"
-                ),
+                text=(f"Finished {index}/{total}"),
             )
             continue
 
@@ -371,16 +320,11 @@ def run_analysis(
         if llm_configured:
             progress.progress(
                 (index - 0.45) / total,
-                text=(
-                    f"Synthesizing and verifying "
-                    f"{resolved_symbol}..."
-                ),
+                text=(f"Synthesizing and verifying " f"{resolved_symbol}..."),
             )
 
             try:
-                synth = synthesize(
-                    record
-                )
+                synth = synthesize(record)
 
                 verified = verify(
                     synth,
@@ -388,9 +332,7 @@ def run_analysis(
                     use_llm=True,
                 )
 
-                verified_by_gene[
-                    resolved_symbol
-                ] = verified
+                verified_by_gene[resolved_symbol] = verified
 
             except Exception as exc:
                 pipeline_errors.setdefault(
@@ -407,9 +349,7 @@ def run_analysis(
 
         progress.progress(
             index / total,
-            text=(
-                f"Finished {index}/{total}"
-            ),
+            text=(f"Finished {index}/{total}"),
         )
 
     progress.empty()
@@ -417,20 +357,12 @@ def run_analysis(
     return {
         "genes": list(genes),
         "records": records,
-        "verified_by_gene": (
-            verified_by_gene
-        ),
+        "verified_by_gene": (verified_by_gene),
         "source_errors": source_errors,
-        "pipeline_errors": (
-            pipeline_errors
-        ),
+        "pipeline_errors": (pipeline_errors),
         "gene_names": gene_names,
-        "enabled_sources": set(
-            enabled_sources
-        ),
-        "llm_configured": (
-            llm_configured
-        ),
+        "enabled_sources": set(enabled_sources),
+        "llm_configured": (llm_configured),
     }
 
 
@@ -443,28 +375,19 @@ def render_claims(
     """
 
     if verified.note:
-        st.info(
-            verified.note
-        )
+        st.info(verified.note)
 
     if not verified.claims:
-        st.info(
-            "No evidence-supported claims "
-            "were generated for this gene."
-        )
+        st.info("No evidence-supported claims " "were generated for this gene.")
         return
 
-    st.markdown(
-        "#### Evidence-grounded claims"
-    )
+    st.markdown("#### Evidence-grounded claims")
 
     for claim_number, claim in enumerate(
         verified.claims,
         start=1,
     ):
-        with st.container(
-            border=True
-        ):
+        with st.container(border=True):
             icon = VERDICT_ICONS.get(
                 claim.verdict,
                 "•",
@@ -475,39 +398,24 @@ def render_claims(
                 claim.verdict,
             )
 
-            st.markdown(
-                f"**{icon} {label}**"
-            )
+            st.markdown(f"**{icon} {label}**")
 
-            st.markdown(
-                f"**{claim_number}. "
-                f"{escape_markdown(claim.text)}**"
-            )
+            st.markdown(f"**{claim_number}. " f"{escape_markdown(claim.text)}**")
 
-            source_links = (
-                evidence_links_for_claim(
-                    claim,
-                    record,
-                )
+            source_links = evidence_links_for_claim(
+                claim,
+                record,
             )
 
             if source_links:
-                st.markdown(
-                    "**Sources:** "
-                    + source_links
-                )
+                st.markdown("**Sources:** " + source_links)
 
             if claim.reason:
-                st.caption(
-                    "Verifier: "
-                    + escape_markdown(claim.reason)
-                )
+                st.caption("Verifier: " + escape_markdown(claim.reason))
 
             # A failed judge call is not cached, so a new run
             # retries only these claims.
-            if claim.reason.startswith(
-                JUDGE_FAILED
-            ):
+            if claim.reason.startswith(JUDGE_FAILED):
                 st.caption(
                     "The judge call failed (e.g. rate limit). "
                     "Click Analyse genes again to retry; "
@@ -523,53 +431,26 @@ def render_evidence(
     Render all retained evidence for one gene.
     """
 
-    with st.expander(
-        (
-            "Retrieved evidence "
-            f"({len(record.evidence)})"
-        )
-    ):
+    with st.expander(("Retrieved evidence " f"({len(record.evidence)})")):
         if not record.evidence:
-            st.write(
-                "No evidence was retrieved "
-                "from the selected sources."
-            )
+            st.write("No evidence was retrieved " "from the selected sources.")
             return
 
-        for index, item in enumerate(
-            record.evidence
-        ):
-            source_label = (
-                evidence_source_label(
-                    item.source
-                )
-            )
+        for index, item in enumerate(record.evidence):
+            source_label = evidence_source_label(item.source)
 
-            st.markdown(
-                f"**{source_label}** "
-                f"· `{item.id}`"
-            )
+            st.markdown(f"**{source_label}** " f"· `{item.id}`")
 
             if item.title:
-                st.markdown(
-                    f"**{escape_markdown(item.title)}**"
-                )
+                st.markdown(f"**{escape_markdown(item.title)}**")
 
             if item.text:
-                st.markdown(
-                    escape_markdown(item.text)
-                )
+                st.markdown(escape_markdown(item.text))
 
             if item.url:
-                st.markdown(
-                    f"[Open source ↗]"
-                    f"({item.url})"
-                )
+                st.markdown(f"[Open source ↗]" f"({item.url})")
 
-            if (
-                index
-                < len(record.evidence) - 1
-            ):
+            if index < len(record.evidence) - 1:
                 st.divider()
 
 
@@ -583,34 +464,18 @@ def render_gene_result(
 
     symbol = record.gene.symbol
 
-    verified = (
-        analysis[
-            "verified_by_gene"
-        ].get(symbol)
-    )
+    verified = analysis["verified_by_gene"].get(symbol)
 
-    gene_name = (
-        analysis[
-            "gene_names"
-        ].get(symbol)
-    )
+    gene_name = analysis["gene_names"].get(symbol)
 
-    with st.container(
-        border=True
-    ):
-        title_col, status_col = (
-            st.columns(
-                [3, 1]
-            )
-        )
+    with st.container(border=True):
+        title_col, status_col = st.columns([3, 1])
 
         with title_col:
             st.subheader(symbol)
 
             if gene_name:
-                st.caption(
-                    gene_name
-                )
+                st.caption(gene_name)
 
         with status_col:
             if verified:
@@ -625,24 +490,16 @@ def render_gene_result(
                 )
 
         if not record.gene.found:
-            st.warning(
-                "This symbol could not be "
-                "resolved as a human gene."
-            )
+            st.warning("This symbol could not be " "resolved as a human gene.")
 
         else:
             metadata_parts = []
 
             if record.gene.gene_type:
-                metadata_parts.append(
-                    "**Type:** "
-                    + record.gene.gene_type
-                )
+                metadata_parts.append("**Type:** " + record.gene.gene_type)
 
             if record.gene.ensembl_id:
-                ensembl = (
-                    record.gene.ensembl_id
-                )
+                ensembl = record.gene.ensembl_id
 
                 metadata_parts.append(
                     "**Ensembl:** "
@@ -655,9 +512,7 @@ def render_gene_result(
                 )
 
             if record.gene.entrez_id:
-                entrez = (
-                    record.gene.entrez_id
-                )
+                entrez = record.gene.entrez_id
 
                 metadata_parts.append(
                     "**Entrez:** "
@@ -669,43 +524,20 @@ def render_gene_result(
                 )
 
             if metadata_parts:
-                st.markdown(
-                    " · ".join(
-                        metadata_parts
-                    )
-                )
+                st.markdown(" · ".join(metadata_parts))
 
-        source_counts = (
-            count_record_sources(
-                record
-            )
-        )
+        source_counts = count_record_sources(record)
 
         count_text = []
 
         for source in SOURCE_ORDER:
-            if (
-                source
-                not in analysis[
-                    "enabled_sources"
-                ]
-            ):
+            if source not in analysis["enabled_sources"]:
                 continue
 
-            count_text.append(
-                (
-                    f"{SOURCE_LABELS[source]}: "
-                    f"{source_counts[source]}"
-                )
-            )
+            count_text.append((f"{SOURCE_LABELS[source]}: " f"{source_counts[source]}"))
 
         if count_text:
-            st.caption(
-                "Evidence by source · "
-                + " · ".join(
-                    count_text
-                )
-            )
+            st.caption("Evidence by source · " + " · ".join(count_text))
 
         if verified:
             render_claims(
@@ -713,9 +545,7 @@ def render_gene_result(
                 record,
             )
 
-        elif not analysis[
-            "llm_configured"
-        ]:
+        elif not analysis["llm_configured"]:
             st.info(
                 "Evidence retrieval completed. "
                 "LLM synthesis and verification "
@@ -724,43 +554,26 @@ def render_gene_result(
                 "evidence is shown below."
             )
 
-        elif symbol in analysis[
-            "pipeline_errors"
-        ]:
+        elif symbol in analysis["pipeline_errors"]:
             st.warning(
                 "Evidence was retrieved, but "
                 "claim synthesis or verification "
                 "did not complete."
             )
 
-        gene_source_errors = (
-            analysis[
-                "source_errors"
-            ].get(
-                symbol,
-                [],
-            )
+        gene_source_errors = analysis["source_errors"].get(
+            symbol,
+            [],
         )
 
-        gene_pipeline_errors = (
-            analysis[
-                "pipeline_errors"
-            ].get(
-                symbol,
-                [],
-            )
+        gene_pipeline_errors = analysis["pipeline_errors"].get(
+            symbol,
+            [],
         )
 
-        if (
-            gene_source_errors
-            or gene_pipeline_errors
-        ):
-            with st.expander(
-                "Warnings"
-            ):
-                for error in (
-                    gene_source_errors
-                ):
+        if gene_source_errors or gene_pipeline_errors:
+            with st.expander("Warnings"):
+                for error in gene_source_errors:
                     st.warning(
                         (
                             f"{error.get('source', 'source')}: "
@@ -768,16 +581,10 @@ def render_gene_result(
                         )
                     )
 
-                for error in (
-                    gene_pipeline_errors
-                ):
-                    st.warning(
-                        error
-                    )
+                for error in gene_pipeline_errors:
+                    st.warning(error)
 
-        render_evidence(
-            record
-        )
+        render_evidence(record)
 
 
 # ---------------------------------------------------------
@@ -797,30 +604,20 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-st.caption(
-    "gencite currently supports Homo sapiens genes."
-)
+st.caption("gencite currently supports Homo sapiens genes.")
 
 
 # ---------------------------------------------------------
 # Input and source selection
 # ---------------------------------------------------------
 
-input_col, source_col = st.columns(
-    [1.25, 1]
-)
+input_col, source_col = st.columns([1.25, 1])
 
 with input_col:
-    st.subheader(
-        "1. Upload a gene list"
-    )
+    st.subheader("1. Upload a gene list")
 
     uploaded_file = st.file_uploader(
-        (
-            "Drag and drop a .txt file "
-            "containing one human gene "
-            "symbol per line"
-        ),
+        ("Drag and drop a .txt file " "containing one human gene " "symbol per line"),
         type=["txt"],
         help=(
             "Headers such as 'Gene' or "
@@ -834,17 +631,9 @@ with input_col:
 
     if uploaded_file is not None:
         try:
-            uploaded_text = (
-                uploaded_file
-                .getvalue()
-                .decode(
-                    "utf-8-sig"
-                )
-            )
+            uploaded_text = uploaded_file.getvalue().decode("utf-8-sig")
 
-            genes = parse_gene_list(
-                uploaded_text
-            )
+            genes = parse_gene_list(uploaded_text)
 
             if genes:
                 st.success(
@@ -856,76 +645,44 @@ with input_col:
                     )
                 )
 
-                with st.expander(
-                    "Preview gene list"
-                ):
-                    st.write(
-                        ", ".join(genes)
-                    )
+                with st.expander("Preview gene list"):
+                    st.write(", ".join(genes))
 
             else:
-                st.warning(
-                    "No gene symbols were "
-                    "found in this file."
-                )
+                st.warning("No gene symbols were " "found in this file.")
 
         except UnicodeDecodeError:
-            st.error(
-                "The uploaded file could not "
-                "be read as UTF-8 text."
-            )
+            st.error("The uploaded file could not " "be read as UTF-8 text.")
 
 with source_col:
-    st.subheader(
-        "2. Choose evidence sources"
-    )
+    st.subheader("2. Choose evidence sources")
 
-    source_left, source_right = (
-        st.columns(2)
-    )
+    source_left, source_right = st.columns(2)
 
     with source_left:
         use_pubmed = st.checkbox(
             "NCBI PubMed",
             value=True,
-            help=(
-                SOURCE_DESCRIPTIONS[
-                    "pubmed"
-                ]
-            ),
+            help=(SOURCE_DESCRIPTIONS["pubmed"]),
         )
 
         use_hpa = st.checkbox(
             "Human Protein Atlas",
             value=True,
-            help=(
-                SOURCE_DESCRIPTIONS[
-                    "human_protein_atlas"
-                ]
-            ),
+            help=(SOURCE_DESCRIPTIONS["human_protein_atlas"]),
         )
 
     with source_right:
-        use_open_targets = (
-            st.checkbox(
-                "Open Targets",
-                value=True,
-                help=(
-                    SOURCE_DESCRIPTIONS[
-                        "open_targets"
-                    ]
-                ),
-            )
+        use_open_targets = st.checkbox(
+            "Open Targets",
+            value=True,
+            help=(SOURCE_DESCRIPTIONS["open_targets"]),
         )
 
         use_amass = st.checkbox(
             "AMASS",
             value=True,
-            help=(
-                SOURCE_DESCRIPTIONS[
-                    "amass"
-                ]
-            ),
+            help=(SOURCE_DESCRIPTIONS["amass"]),
         )
 
     st.caption(
@@ -941,36 +698,23 @@ with source_col:
 selected_sources = set()
 
 if use_pubmed:
-    selected_sources.add(
-        "pubmed"
-    )
+    selected_sources.add("pubmed")
 
 if use_open_targets:
-    selected_sources.add(
-        "open_targets"
-    )
+    selected_sources.add("open_targets")
 
 if use_hpa:
-    selected_sources.add(
-        "human_protein_atlas"
-    )
+    selected_sources.add("human_protein_atlas")
 
 if use_amass:
-    selected_sources.add(
-        "amass"
-    )
+    selected_sources.add("amass")
 
 
 # ---------------------------------------------------------
 # Configuration messages
 # ---------------------------------------------------------
 
-if (
-    use_amass
-    and not os.getenv(
-        "AMASS_API_KEY"
-    )
-):
+if use_amass and not os.getenv("AMASS_API_KEY"):
     st.warning(
         "AMASS is selected, but "
         "`AMASS_API_KEY` is not configured. "
@@ -978,9 +722,7 @@ if (
         "still run."
     )
 
-llm_configured = bool(
-    os.getenv("LLM_API_KEY")
-)
+llm_configured = bool(os.getenv("LLM_API_KEY"))
 
 if not llm_configured:
     st.info(
@@ -999,56 +741,40 @@ if not llm_configured:
 # Analyse button
 # ---------------------------------------------------------
 
-st.subheader(
-    "3. Analyse"
-)
+st.subheader("3. Analyse")
 
 if not selected_sources:
-    st.warning(
-        "Select at least one evidence source."
-    )
+    st.warning("Select at least one evidence source.")
 
 analyse_clicked = st.button(
     "Analyse genes",
     type="primary",
     use_container_width=True,
-    disabled=(
-        not genes
-        or not selected_sources
-    ),
+    disabled=(not genes or not selected_sources),
 )
 
 if analyse_clicked:
     analysis = run_analysis(
         genes=genes,
-        enabled_sources=(
-            selected_sources
-        ),
+        enabled_sources=(selected_sources),
     )
 
-    st.session_state[
-        "gencite_analysis"
-    ] = analysis
+    st.session_state["gencite_analysis"] = analysis
 
 
 # ---------------------------------------------------------
 # Results
 # ---------------------------------------------------------
 
-analysis = st.session_state.get(
-    "gencite_analysis"
-)
+analysis = st.session_state.get("gencite_analysis")
 
 # Results belong to the gene list and sources they were run with.
 # If the file or the source selection changed since, drop them
 # instead of showing them next to the new inputs.
 if analysis and (
-    analysis["genes"] != genes
-    or analysis["enabled_sources"] != selected_sources
+    analysis["genes"] != genes or analysis["enabled_sources"] != selected_sources
 ):
-    del st.session_state[
-        "gencite_analysis"
-    ]
+    del st.session_state["gencite_analysis"]
 
     analysis = None
 
@@ -1060,74 +786,39 @@ if analysis and (
 if analysis:
     st.divider()
 
-    st.markdown(
-        "## Results"
-    )
+    st.markdown("## Results")
 
-    records = analysis[
-        "records"
-    ]
+    records = analysis["records"]
 
     if not records:
-        st.error(
-            "No genes were successfully "
-            "processed."
-        )
+        st.error("No genes were successfully " "processed.")
 
         # If every retrieval failed, show the captured exceptions
         # instead of hiding them behind the record-dependent UI.
-        if analysis[
-            "pipeline_errors"
-        ]:
-            with st.expander(
-                "Error details"
-            ):
-                for symbol, errors in (
-                    analysis[
-                        "pipeline_errors"
-                    ].items()
-                ):
+        if analysis["pipeline_errors"]:
+            with st.expander("Error details"):
+                for symbol, errors in analysis["pipeline_errors"].items():
                     for error in errors:
-                        st.error(
-                            f"{symbol}: {error}"
-                        )
+                        st.error(f"{symbol}: {error}")
 
     else:
-        total_evidence = sum(
-            len(record.evidence)
-            for record in records
-        )
+        total_evidence = sum(len(record.evidence) for record in records)
 
         verified_results = [
-            analysis[
-                "verified_by_gene"
-            ][record.gene.symbol]
+            analysis["verified_by_gene"][record.gene.symbol]
             for record in records
-            if record.gene.symbol
-            in analysis[
-                "verified_by_gene"
-            ]
+            if record.gene.symbol in analysis["verified_by_gene"]
         ]
 
-        total_claims = sum(
-            len(result.claims)
-            for result in verified_results
-        )
+        total_claims = sum(len(result.claims) for result in verified_results)
 
         supported_claims = sum(
-            (
-                claim.verdict
-                == "supported"
-            )
-            for result
-            in verified_results
-            for claim
-            in result.claims
+            (claim.verdict == "supported")
+            for result in verified_results
+            for claim in result.claims
         )
 
-        metric_1, metric_2, metric_3, metric_4 = (
-            st.columns(4)
-        )
+        metric_1, metric_2, metric_3, metric_4 = st.columns(4)
 
         metric_1.metric(
             "Genes processed",
@@ -1141,86 +832,48 @@ if analysis:
 
         metric_3.metric(
             "Claims",
-            (
-                total_claims
-                if analysis[
-                    "llm_configured"
-                ]
-                else "Not run"
-            ),
+            (total_claims if analysis["llm_configured"] else "Not run"),
         )
 
         metric_4.metric(
             "Supported claims",
-            (
-                supported_claims
-                if analysis[
-                    "llm_configured"
-                ]
-                else "Not run"
-            ),
+            (supported_claims if analysis["llm_configured"] else "Not run"),
         )
 
         source_summary = Counter()
 
         for record in records:
-            source_summary.update(
-                count_record_sources(
-                    record
-                )
-            )
+            source_summary.update(count_record_sources(record))
 
         source_summary_text = []
 
         for source in SOURCE_ORDER:
-            if (
-                source
-                not in analysis[
-                    "enabled_sources"
-                ]
-            ):
+            if source not in analysis["enabled_sources"]:
                 continue
 
             source_summary_text.append(
-                (
-                    f"{SOURCE_LABELS[source]}: "
-                    f"{source_summary[source]}"
-                )
+                (f"{SOURCE_LABELS[source]}: " f"{source_summary[source]}")
             )
 
         if source_summary_text:
-            st.caption(
-                "Unique retained evidence · "
-                + " · ".join(
-                    source_summary_text
-                )
-            )
+            st.caption("Unique retained evidence · " + " · ".join(source_summary_text))
 
         # ---------------------------------------------
         # Download final Markdown report
         # ---------------------------------------------
 
         if verified_results:
-            records_by_symbol = {
-                record.gene.symbol: record
-                for record in records
-            }
+            records_by_symbol = {record.gene.symbol: record for record in records}
 
-            markdown_report = (
-                build_report(
-                    verified_results,
-                    records_by_symbol,
-                )
+            markdown_report = build_report(
+                verified_results,
+                records_by_symbol,
             )
 
             st.download_button(
-                label=(
-                    "Download Markdown report"
-                ),
+                label=("Download Markdown report"),
                 data=markdown_report,
-                file_name=(
-                    "gencite_report.md"
-                ),
+                file_name=("gencite_report.md"),
                 mime="text/markdown",
             )
 
@@ -1228,41 +881,20 @@ if analysis:
         # Fatal retrieval failures
         # ---------------------------------------------
 
-        if analysis[
-            "pipeline_errors"
-        ]:
+        if analysis["pipeline_errors"]:
             failed_before_record = [
                 symbol
-                for symbol
-                in analysis[
-                    "pipeline_errors"
-                ]
-                if symbol
-                not in {
-                    record.gene.symbol
-                    for record
-                    in records
-                }
+                for symbol in analysis["pipeline_errors"]
+                if symbol not in {record.gene.symbol for record in records}
             ]
 
             if failed_before_record:
-                with st.expander(
-                    (
-                        "Genes that could not "
-                        "be processed"
-                    )
-                ):
-                    for symbol in (
-                        failed_before_record
-                    ):
+                with st.expander(("Genes that could not " "be processed")):
+                    for symbol in failed_before_record:
                         st.error(
                             symbol
                             + ": "
-                            + " | ".join(
-                                analysis[
-                                    "pipeline_errors"
-                                ][symbol]
-                            )
+                            + " | ".join(analysis["pipeline_errors"][symbol])
                         )
 
         # ---------------------------------------------

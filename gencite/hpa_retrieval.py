@@ -1,6 +1,5 @@
 import requests
 
-
 HPA_BASE_URL = "https://www.proteinatlas.org"
 
 
@@ -35,11 +34,7 @@ def retrieve_hpa_evidence(ensembl_id: str) -> list[dict]:
     if not isinstance(data, dict):
         return []
 
-    gene_symbol = (
-        data.get("Gene")
-        or data.get("Gene name")
-        or ensembl_id
-    )
+    gene_symbol = data.get("Gene") or data.get("Gene name") or ensembl_id
 
     evidence = []
 
@@ -53,14 +48,10 @@ def retrieve_hpa_evidence(ensembl_id: str) -> list[dict]:
     tissue_parts = []
 
     if tissue_specificity:
-        tissue_parts.append(
-            f"RNA tissue specificity: {tissue_specificity}"
-        )
+        tissue_parts.append(f"RNA tissue specificity: {tissue_specificity}")
 
     if tissue_distribution:
-        tissue_parts.append(
-            f"RNA tissue distribution: {tissue_distribution}"
-        )
+        tissue_parts.append(f"RNA tissue distribution: {tissue_distribution}")
 
     if tissue_specific_ntpm:
         if isinstance(tissue_specific_ntpm, dict):
@@ -68,22 +59,22 @@ def retrieve_hpa_evidence(ensembl_id: str) -> list[dict]:
                 f"{tissue} = {value} nTPM"
                 for tissue, value in tissue_specific_ntpm.items()
             )
-            tissue_parts.append(
-                f"RNA tissue-specific expression: {formatted_tissues}"
-            )
+            tissue_parts.append(f"RNA tissue-specific expression: {formatted_tissues}")
         else:
             tissue_parts.append(
                 f"RNA tissue-specific expression: {tissue_specific_ntpm}"
             )
 
     if tissue_parts:
-        evidence.append({
-            "id": f"HPA:tissue:{ensembl_id}",
-            "source": "human_protein_atlas",
-            "title": f"Tissue expression for {gene_symbol}",
-            "text": ". ".join(tissue_parts) + ".",
-            "url": f"{HPA_BASE_URL}/{ensembl_id}",
-        })
+        evidence.append(
+            {
+                "id": f"HPA:tissue:{ensembl_id}",
+                "source": "human_protein_atlas",
+                "title": f"Tissue expression for {gene_symbol}",
+                "text": ". ".join(tissue_parts) + ".",
+                "url": f"{HPA_BASE_URL}/{ensembl_id}",
+            }
+        )
 
     # -------------------------
     # Single-cell summary
@@ -94,23 +85,21 @@ def retrieve_hpa_evidence(ensembl_id: str) -> list[dict]:
     cell_parts = []
 
     if cell_specificity:
-        cell_parts.append(
-            f"Single-cell type specificity: {cell_specificity}"
-        )
+        cell_parts.append(f"Single-cell type specificity: {cell_specificity}")
 
     if cell_distribution:
-        cell_parts.append(
-            f"Single-cell type distribution: {cell_distribution}"
-        )
+        cell_parts.append(f"Single-cell type distribution: {cell_distribution}")
 
     if cell_parts:
-        evidence.append({
-            "id": f"HPA:celltype:{ensembl_id}",
-            "source": "human_protein_atlas",
-            "title": f"Cell-type expression for {gene_symbol}",
-            "text": ". ".join(cell_parts) + ".",
-            "url": f"{HPA_BASE_URL}/{ensembl_id}",
-        })
+        evidence.append(
+            {
+                "id": f"HPA:celltype:{ensembl_id}",
+                "source": "human_protein_atlas",
+                "title": f"Cell-type expression for {gene_symbol}",
+                "text": ". ".join(cell_parts) + ".",
+                "url": f"{HPA_BASE_URL}/{ensembl_id}",
+            }
+        )
 
     # -------------------------
     # Biological annotation
@@ -122,27 +111,23 @@ def retrieve_hpa_evidence(ensembl_id: str) -> list[dict]:
     annotation_parts = []
 
     if biological_process:
-        annotation_parts.append(
-            f"Biological process: {biological_process}"
-        )
+        annotation_parts.append(f"Biological process: {biological_process}")
 
     if molecular_function:
-        annotation_parts.append(
-            f"Molecular function: {molecular_function}"
-        )
+        annotation_parts.append(f"Molecular function: {molecular_function}")
 
     if disease_involvement:
-        annotation_parts.append(
-            f"Disease involvement: {disease_involvement}"
-        )
+        annotation_parts.append(f"Disease involvement: {disease_involvement}")
 
     if annotation_parts:
-        evidence.append({
-            "id": f"HPA:annotation:{ensembl_id}",
-            "source": "human_protein_atlas",
-            "title": f"HPA annotation for {gene_symbol}",
-            "text": ". ".join(annotation_parts) + ".",
-            "url": f"{HPA_BASE_URL}/{ensembl_id}",
-        })
+        evidence.append(
+            {
+                "id": f"HPA:annotation:{ensembl_id}",
+                "source": "human_protein_atlas",
+                "title": f"HPA annotation for {gene_symbol}",
+                "text": ". ".join(annotation_parts) + ".",
+                "url": f"{HPA_BASE_URL}/{ensembl_id}",
+            }
+        )
 
     return evidence

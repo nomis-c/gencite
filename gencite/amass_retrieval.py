@@ -4,7 +4,6 @@ import re
 import requests
 from dotenv import load_dotenv
 
-
 load_dotenv()
 
 AMASS_BASE_URL = "https://api.amass.tech/api/v1"
@@ -20,8 +19,7 @@ def _get_headers() -> dict:
     """
     if not AMASS_API_KEY:
         raise RuntimeError(
-            "AMASS_API_KEY is not set. "
-            "Add it to the local .env file."
+            "AMASS_API_KEY is not set. " "Add it to the local .env file."
         )
 
     return {
@@ -57,14 +55,10 @@ def _lookup_genecore_amass_id(
     lookup_items = []
 
     if ensembl_id:
-        lookup_items.append({
-            "ensemblGeneId": ensembl_id
-        })
+        lookup_items.append({"ensemblGeneId": ensembl_id})
 
     if gene_symbol:
-        lookup_items.append({
-            "symbol": gene_symbol
-        })
+        lookup_items.append({"symbol": gene_symbol})
 
     for item in lookup_items:
         try:
@@ -107,10 +101,7 @@ def _fetch_genecore_record(
     Fetch one exact GeneCore record by AMASS ID.
     """
 
-    url = (
-        f"{AMASS_BASE_URL}/cores/genecore/"
-        f"records/{amass_id}"
-    )
+    url = f"{AMASS_BASE_URL}/cores/genecore/" f"records/{amass_id}"
 
     try:
         response = requests.get(
@@ -177,13 +168,15 @@ def _gene_record_to_evidence(
     summary = record.get("summary")
 
     if summary:
-        evidence.append({
-            "id": f"AMASS:gene:{amass_id}",
-            "source": "amass_genecore",
-            "title": f"GeneCore summary for {symbol}",
-            "text": summary,
-            "url": "https://platform.amass.tech/",
-        })
+        evidence.append(
+            {
+                "id": f"AMASS:gene:{amass_id}",
+                "source": "amass_genecore",
+                "title": f"GeneCore summary for {symbol}",
+                "text": summary,
+                "url": "https://platform.amass.tech/",
+            }
+        )
 
     # -------------------------
     # Gene metadata
@@ -198,43 +191,33 @@ def _gene_record_to_evidence(
     entrez_id = record.get("entrezGeneId")
 
     if name:
-        metadata_parts.append(
-            f"Gene name: {name}"
-        )
+        metadata_parts.append(f"Gene name: {name}")
 
     if gene_type:
-        metadata_parts.append(
-            f"Gene type: {gene_type}"
-        )
+        metadata_parts.append(f"Gene type: {gene_type}")
 
     if location:
-        metadata_parts.append(
-            f"Cytogenetic location: {location}"
-        )
+        metadata_parts.append(f"Cytogenetic location: {location}")
 
     if chromosome:
-        metadata_parts.append(
-            f"Chromosome: {chromosome}"
-        )
+        metadata_parts.append(f"Chromosome: {chromosome}")
 
     if hgnc_id:
-        metadata_parts.append(
-            f"HGNC ID: {hgnc_id}"
-        )
+        metadata_parts.append(f"HGNC ID: {hgnc_id}")
 
     if entrez_id:
-        metadata_parts.append(
-            f"Entrez Gene ID: {entrez_id}"
-        )
+        metadata_parts.append(f"Entrez Gene ID: {entrez_id}")
 
     if metadata_parts:
-        evidence.append({
-            "id": f"AMASS:metadata:{amass_id}",
-            "source": "amass_genecore",
-            "title": f"GeneCore metadata for {symbol}",
-            "text": ". ".join(metadata_parts) + ".",
-            "url": "https://platform.amass.tech/",
-        })
+        evidence.append(
+            {
+                "id": f"AMASS:metadata:{amass_id}",
+                "source": "amass_genecore",
+                "title": f"GeneCore metadata for {symbol}",
+                "text": ". ".join(metadata_parts) + ".",
+                "url": "https://platform.amass.tech/",
+            }
+        )
 
     # -------------------------
     # Protein information
@@ -245,45 +228,32 @@ def _gene_record_to_evidence(
     protein_parts = []
 
     function_summary = function.get("functionSummary")
-    associated_diseases = function.get(
-        "associatedDiseases"
-    )
-    tissue_specificity = function.get(
-        "tissueSpecificity"
-    )
-    subcellular_locations = function.get(
-        "subcellularLocations"
-    )
+    associated_diseases = function.get("associatedDiseases")
+    tissue_specificity = function.get("tissueSpecificity")
+    subcellular_locations = function.get("subcellularLocations")
 
     if function_summary:
-        protein_parts.append(
-            f"Protein function: {function_summary}"
-        )
+        protein_parts.append(f"Protein function: {function_summary}")
 
     if associated_diseases:
-        protein_parts.append(
-            f"Associated diseases: {associated_diseases}"
-        )
+        protein_parts.append(f"Associated diseases: {associated_diseases}")
 
     if tissue_specificity:
-        protein_parts.append(
-            f"Tissue specificity: {tissue_specificity}"
-        )
+        protein_parts.append(f"Tissue specificity: {tissue_specificity}")
 
     if subcellular_locations:
-        protein_parts.append(
-            f"Subcellular locations: "
-            f"{subcellular_locations}"
-        )
+        protein_parts.append(f"Subcellular locations: " f"{subcellular_locations}")
 
     if protein_parts:
-        evidence.append({
-            "id": f"AMASS:protein:{amass_id}",
-            "source": "amass_genecore",
-            "title": f"Protein information for {symbol}",
-            "text": ". ".join(protein_parts) + ".",
-            "url": "https://platform.amass.tech/",
-        })
+        evidence.append(
+            {
+                "id": f"AMASS:protein:{amass_id}",
+                "source": "amass_genecore",
+                "title": f"Protein information for {symbol}",
+                "text": ". ".join(protein_parts) + ".",
+                "url": "https://platform.amass.tech/",
+            }
+        )
 
     return evidence
 
@@ -331,19 +301,12 @@ def _is_biomed_record_relevant(
     if gene_name:
         gene_name_lower = gene_name.lower()
 
-        if (
-            len(gene_name_lower) >= 4
-            and gene_name_lower in text
-        ):
+        if len(gene_name_lower) >= 4 and gene_name_lower in text:
             return True
 
-    symbol_pattern = (
-        rf"\b{re.escape(gene_symbol.lower())}\b"
-    )
+    symbol_pattern = rf"\b{re.escape(gene_symbol.lower())}\b"
 
-    symbol_present = bool(
-        re.search(symbol_pattern, text)
-    )
+    symbol_present = bool(re.search(symbol_pattern, text))
 
     if not symbol_present:
         return False
@@ -364,10 +327,7 @@ def _is_biomed_record_relevant(
         "polymorphism",
     ]
 
-    return any(
-        term in text
-        for term in biological_context_terms
-    )
+    return any(term in text for term in biological_context_terms)
 
 
 def retrieve_amass_biomed_evidence(
@@ -383,10 +343,7 @@ def retrieve_amass_biomed_evidence(
     failing the entire GenCite pipeline.
     """
 
-    url = (
-        f"{AMASS_BASE_URL}/cores/"
-        f"biomedcore/records"
-    )
+    url = f"{AMASS_BASE_URL}/cores/" f"biomedcore/records"
 
     if gene_name:
         query = f"{gene_symbol} {gene_name} gene"
@@ -441,38 +398,23 @@ def retrieve_amass_biomed_evidence(
 
         pmid = record.get("pmid")
         doi = record.get("doi")
-        title = (
-            record.get("title")
-            or "Biomedical publication"
-        )
+        title = record.get("title") or "Biomedical publication"
         abstract = record.get("abstract") or ""
 
         metadata_parts = []
 
         journal = record.get("journal")
-        publication_date = record.get(
-            "publicationDate"
-        )
-        citation_count = record.get(
-            "citationCount"
-        )
+        publication_date = record.get("publicationDate")
+        citation_count = record.get("citationCount")
 
         if journal:
-            metadata_parts.append(
-                f"Journal: {journal}"
-            )
+            metadata_parts.append(f"Journal: {journal}")
 
         if publication_date:
-            metadata_parts.append(
-                f"Publication date: "
-                f"{publication_date}"
-            )
+            metadata_parts.append(f"Publication date: " f"{publication_date}")
 
         if citation_count is not None:
-            metadata_parts.append(
-                f"Citation count: "
-                f"{citation_count}"
-            )
+            metadata_parts.append(f"Citation count: " f"{citation_count}")
 
         text_parts = []
 
@@ -480,34 +422,26 @@ def retrieve_amass_biomed_evidence(
             text_parts.append(abstract)
 
         if metadata_parts:
-            text_parts.append(
-                "Metadata: "
-                + "; ".join(metadata_parts)
-            )
+            text_parts.append("Metadata: " + "; ".join(metadata_parts))
 
         if pmid:
-            source_url = (
-                "https://pubmed.ncbi.nlm.nih.gov/"
-                f"{pmid}/"
-            )
+            source_url = "https://pubmed.ncbi.nlm.nih.gov/" f"{pmid}/"
 
         elif doi:
-            source_url = (
-                f"https://doi.org/{doi}"
-            )
+            source_url = f"https://doi.org/{doi}"
 
         else:
-            source_url = (
-                "https://platform.amass.tech/"
-            )
+            source_url = "https://platform.amass.tech/"
 
-        evidence.append({
-            "id": f"AMASS:biomed:{amass_id}",
-            "source": "amass_biomedcore",
-            "title": title,
-            "text": " ".join(text_parts),
-            "url": source_url,
-        })
+        evidence.append(
+            {
+                "id": f"AMASS:biomed:{amass_id}",
+                "source": "amass_biomedcore",
+                "title": title,
+                "text": " ".join(text_parts),
+                "url": source_url,
+            }
+        )
 
         if len(evidence) >= max_results:
             break
@@ -548,12 +482,10 @@ def retrieve_amass_evidence(
         gene_name = gene_record.get("name")
 
     try:
-        biomed_evidence = (
-            retrieve_amass_biomed_evidence(
-                gene_symbol=gene_symbol,
-                gene_name=gene_name,
-                max_results=max_biomed_results,
-            )
+        biomed_evidence = retrieve_amass_biomed_evidence(
+            gene_symbol=gene_symbol,
+            gene_name=gene_name,
+            max_results=max_biomed_results,
         )
 
         evidence.extend(biomed_evidence)
