@@ -1,28 +1,152 @@
-from pubmed_retrieval import retrieve_pubmed_evidence
-from opentargets import retrieve_open_targets_evidence
-from hpa_retrieval import retrieve_hpa_evidence
-from amass_retrieval import retrieve_amass_evidence
+from pubmed_retrieval import (
+    retrieve_pubmed_evidence,
+)
+from opentargets import (
+    retrieve_open_targets_evidence,
+)
+from hpa_retrieval import (
+    retrieve_hpa_evidence,
+)
+from amass_retrieval import (
+    retrieve_amass_evidence,
+)
 
 
-def _deduplicate_evidence(evidence: list[dict]) -> list[dict]:
+def _normalize_publication_url(
+    item: dict,
+) -> str | None:
     """
-    Remove duplicate evidence records based on their unique evidence ID,
-    while preserving the original order.
+    Return a normalized publication URL for literature evidence.
+
+    Only publication-specific URLs are used for cross-source
+    deduplication.
+
+    Generic provider URLs such as the AMASS platform homepage must
+    not be treated as duplicate evidence.
     """
+
+    source = item.get("source")
+    url = (
+        item.get("url") or ""
+    ).strip()
+
+    if not url:
+        return None
+
+    # PubMed and AMASS BiomedCore can represent the same
+    # underlying publication using different evidence IDs.
+    if source not in {
+        "pubmed",
+        "amass_biomedcore",
+    }:
+        return None
+
+    normalized = (
+        url.rstrip("/").lower()
+    )
+
+    if (
+        "pubmed.ncbi.nlm.nih.gov/"
+        in normalized
+        or "doi.org/" in normalized
+    ):
+        return normalized
+
+    return None
+
+
+def _deduplicate_evidence(
+    evidence: list[dict],
+) -> list[dict]:
+    """
+    Remove duplicate evidence while preserving order.
+
+    Evidence is considered duplicate when:
+    - its evidence ID has already been seen, or
+    - PubMed and AMASS BiomedCore refer to the same underlying
+      publication URL.
+
+    Non-literature evidence is not deduplicated merely because
+    several records share a generic provider URL.
+    """
+
     seen_ids = set()
+    seen_publication_urls = set()
     unique_evidence = []
 
     for item in evidence:
         evidence_id = item.get("id")
 
-        if not evidence_id:
+        publication_url = (
+            _normalize_publication_url(
+                item
+            )
+        )
+
+        if (
+            evidence_id
+            and evidence_id in seen_ids
+        ):
             continue
 
-        if evidence_id not in seen_ids:
+        if (
+            publication_url
+            and publication_url
+            in seen_publication_urls
+        ):
+            continue
+
+        if evidence_id:
             seen_ids.add(evidence_id)
-            unique_evidence.append(item)
+
+        if publication_url:
+            seen_publication_urls.add(
+                publication_url
+            )
+
+        unique_evidence.append(item)
 
     return unique_evidence
+
+
+def _count_sources(
+    evidence: list[dict],
+) -> dict:
+    """
+    Count evidence records after final deduplication.
+
+    AMASS GeneCore and BiomedCore records are grouped together under
+    the user-facing 'amass' source count.
+    """
+
+    counts = {
+        "pubmed": 0,
+        "open_targets": 0,
+        "human_protein_atlas": 0,
+        "amass": 0,
+    }
+
+    for item in evidence:
+        source = item.get("source")
+
+        if source == "pubmed":
+            counts["pubmed"] += 1
+
+        elif source == "open_targets":
+            counts["open_targets"] += 1
+
+        elif source == "human_protein_atlas":
+            counts[
+                "human_protein_atlas"
+            ] += 1
+
+        elif (
+            isinstance(source, str)
+            and source.startswith("amass")
+        ):
+            counts["amass"] += 1
+
+    return counts
 
 
 def collect_evidence(
@@ -51,28 +175,42 @@ def collect_evidence(
         "evidence_count": 0,
     }
 
-    # If the gene could not be resolved, there is nothing useful to query.
+    # If the gene could not be resolved,
+    # there is nothing useful to query.
     if not gene_info.get("found"):
         record["errors"].append({
             "source": "gene_resolution",
-            "message": "Gene could not be resolved.",
+            "message": (
+                "Gene could not be resolved."
+            ),
         })
         return record
 
     gene_symbol = gene_info.get("symbol")
-    ensembl_id = gene_info.get("ensembl_id")
+    gene_name = gene_info.get("name")
+    ensembl_id = gene_info.get(
+        "ensembl_id"
+    )
+    entrez_id = gene_info.get(
+        "entrez_id"
+    )
 
     # -------------------------
     # PubMed evidence
     # -------------------------
     try:
-        pubmed_evidence = retrieve_pubmed_evidence(
-            gene_symbol,
-            max_results=max_pubmed_results,
+        pubmed_evidence = (
+            retrieve_pubmed_evidence(
+                gene_symbol=gene_symbol,
+                gene_name=gene_name,
+                entrez_id=entrez_id,
+                max_results=max_pubmed_results,
+            )
         )
 
-        record["evidence"].extend(pubmed_evidence)
-        record["source_counts"]["pubmed"] = len(pubmed_evidence)
+        record["evidence"].extend(
+            pubmed_evidence
+        )
 
     except Exception as exc:
         record["errors"].append({
@@ -85,13 +223,14 @@ def collect_evidence(
     # -------------------------
     if ensembl_id:
         try:
-            open_targets_evidence = retrieve_open_targets_evidence(
-                ensembl_id,
-                max_diseases=max_diseases,
+            open_targets_evidence = (
+                retrieve_open_targets_evidence(
+                    ensembl_id,
+                    max_diseases=max_diseases,
+                )
             )
 
-            record["evidence"].extend(open_targets_evidence)
-            record["source_counts"]["open_targets"] = len(
+            record["evidence"].extend(
                 open_targets_evidence
             )
 
@@ -104,7 +243,10 @@ def collect_evidence(
     else:
         record["errors"].append({
             "source": "open_targets",
-            "message": "No Ensembl ID available for this gene.",
+            "message": (
+                "No Ensembl ID available "
+                "for this gene."
+            ),
         })
 
     # -------------------------
@@ -112,23 +254,33 @@ def collect_evidence(
     # -------------------------
     if ensembl_id:
         try:
-            hpa_evidence = retrieve_hpa_evidence(ensembl_id)
+            hpa_evidence = (
+                retrieve_hpa_evidence(
+                    ensembl_id
+                )
+            )
 
-            record["evidence"].extend(hpa_evidence)
-            record["source_counts"]["human_protein_atlas"] = len(
+            record["evidence"].extend(
                 hpa_evidence
             )
 
         except Exception as exc:
             record["errors"].append({
-                "source": "human_protein_atlas",
+                "source": (
+                    "human_protein_atlas"
+                ),
                 "message": str(exc),
             })
 
     else:
         record["errors"].append({
-            "source": "human_protein_atlas",
-            "message": "No Ensembl ID available for this gene.",
+            "source": (
+                "human_protein_atlas"
+            ),
+            "message": (
+                "No Ensembl ID available "
+                "for this gene."
+            ),
         })
 
     # -------------------------
@@ -136,14 +288,19 @@ def collect_evidence(
     # -------------------------
     if gene_symbol:
         try:
-            amass_evidence = retrieve_amass_evidence(
-                gene_symbol=gene_symbol,
-                ensembl_id=ensembl_id,
-                max_biomed_results=max_amass_biomed_results,
+            amass_evidence = (
+                retrieve_amass_evidence(
+                    gene_symbol=gene_symbol,
+                    ensembl_id=ensembl_id,
+                    max_biomed_results=(
+                        max_amass_biomed_results
+                    ),
+                )
             )
 
-            record["evidence"].extend(amass_evidence)
-            record["source_counts"]["amass"] = len(amass_evidence)
+            record["evidence"].extend(
+                amass_evidence
+            )
 
         except Exception as exc:
             record["errors"].append({
@@ -154,14 +311,30 @@ def collect_evidence(
     else:
         record["errors"].append({
             "source": "amass",
-            "message": "No gene symbol available for this gene.",
+            "message": (
+                "No gene symbol available "
+                "for this gene."
+            ),
         })
 
     # -------------------------
     # Final cleanup
     # -------------------------
-    record["evidence"] = _deduplicate_evidence(record["evidence"])
-    record["evidence_count"] = len(record["evidence"])
+    record["evidence"] = (
+        _deduplicate_evidence(
+            record["evidence"]
+        )
+    )
+
+    record["source_counts"] = (
+        _count_sources(
+            record["evidence"]
+        )
+    )
+
+    record["evidence_count"] = len(
+        record["evidence"]
+    )
 
     return record
 
@@ -179,9 +352,13 @@ def collect_evidence_for_genes(
     return [
         collect_evidence(
             gene_info,
-            max_pubmed_results=max_pubmed_results,
+            max_pubmed_results=(
+                max_pubmed_results
+            ),
             max_diseases=max_diseases,
-            max_amass_biomed_results=max_amass_biomed_results,
+            max_amass_biomed_results=(
+                max_amass_biomed_results
+            ),
         )
         for gene_info in gene_infos
     ]
