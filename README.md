@@ -176,7 +176,7 @@ Your own list is a text file with one gene symbol per line. A header line such a
 streamlit run streamlit_app.py
 ```
 
-Then open http://localhost:8501. Upload a `.txt` gene list, choose the evidence sources (PubMed, Open Targets, Human Protein Atlas, AMASS) and click **Analyse genes**. Each gene is shown as a card with its claims, their status, the verifier's reason and links to the sources; the Markdown report can be downloaded. Without `LLM_API_KEY` the app still resolves the genes and shows the retrieved evidence, but writes no claims.
+Then open http://localhost:8501. Upload a `.txt` gene list (or click **Try the example list** for the 8 test genes), choose the evidence sources (PubMed, Open Targets, Human Protein Atlas, AMASS) and click **Analyse genes**. Each gene is shown as a card with its claims, their status, the verifier's reason and links to the sources; the Markdown report can be downloaded. Without `LLM_API_KEY` the app still resolves the genes and shows the retrieved evidence, but writes no claims.
 
 ### Commands
 
