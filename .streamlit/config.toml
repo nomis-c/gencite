@@ -1,0 +1,7 @@
+# Colours of the web interface: two fluorescence channels, DAPI blue fading into mCherry red.
+[theme]
+base = "dark"
+primaryColor = "#6F86F7"
+backgroundColor = "#10172E"
+secondaryBackgroundColor = "#1A2244"
+textColor = "#E4EAF3"

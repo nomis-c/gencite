@@ -1,0 +1,8 @@
+# Tool settings only; gencite is not an installable package (run it with python -m gencite).
+
+[tool.black]
+line-length = 88
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
