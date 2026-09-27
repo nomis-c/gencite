@@ -54,7 +54,9 @@ Related tools cover parts of this. GeneAgent (Wang et al., *Nature Methods* 2025
 
 All pipeline code is in the `gencite/` package (see [Project structure](#project-structure)). Retrieval sources are independent: if one fails or has no entry for a gene (e.g. a pseudogene missing in the Human Protein Atlas), the gene continues with the others.
 
-Each step checks its input and fails locally: every LLM answer must match a schema (invalid output gets one retry with the error message, a claim without a citation is rejected); if one gene fails, the run continues; if a judge call fails, only that claim is marked `unchecked` and a rerun retries just that claim. In the web interface, text from APIs and the LLM is escaped before it is shown.
+Each step checks its input and fails locally: every LLM answer must match a schema (invalid output gets one retry with the error message, a claim without a citation is rejected); if one gene fails, the run continues; if a judge call fails, only that claim is marked `unchecked` and a rerun retries just that claim.
+
+The pipeline steps are covered by offline tests (pytest) that run automatically on every push and pull request.
 
 ## Results
 
@@ -84,7 +86,13 @@ Typical baseline examples:
 
 The `partial` verdicts of `gencite` in a run on the 15-gene list are small overstatements that are easy to miss when reading quickly, e.g. KHDRBS2 "in prostate cancer cell lines" where the paper used one cell line, or TMEM220 "promoter methylation" where the paper says gene methylation.
 
-Retrieval uses live APIs, so numbers can shift slightly between runs. Reproduce them with the commands in [Evaluation against a baseline](#evaluation-against-a-baseline); report them together with the date and the models used.
+Retrieval uses live APIs, so numbers can shift slightly between runs; report them together with the date and the models used. To reproduce them:
+
+```bash
+python -m gencite test_data/eval_genes.txt              # gencite  -> results/eval_genes/
+python -m gencite.baseline test_data/eval_genes.txt     # baseline -> results/eval_genes/baseline/
+python -m gencite.evaluate results/eval_genes           # -> results/eval_genes/evaluation.md (no API or LLM calls)
+```
 
 ## Limitations and responsible use
 
@@ -225,37 +233,9 @@ Claim status in the report:
 
 The synthesizer runs at temperature 0 and every LLM answer is cached by model and prompt (never with the API key), so the same evidence gives the same claims on a rerun.
 
+To start from scratch, delete the results and the LLM cache: `rm -rf results/ data/cache/`.
+
 Exit code 1 means some genes or claims failed, usually because of an LLM rate limit. Run the same command again: finished LLM calls come from the cache, only the failed ones are repeated.
-
-## Testing
-
-Automated tests run offline: no API key, no network, no LLM calls, about a second.
-
-```bash
-pip install -r requirement_dev.txt                # once: requirement.txt + pytest + black
-python -m pytest                                  # tests/ (also run by GitHub Actions on every push and pull request)
-black --check gencite/ streamlit_app.py tests/    # formatting
-```
-
-`test_data/` is the test data set:
-
-| Path | Content | Used by |
-|---|---|---|
-| `test_data/gene_list.txt` | 15 real genes | whole pipeline with live retrieval: `python -m gencite test_data/gene_list.txt` |
-| `test_data/dummy_records/` | hand-written evidence for 6 genes with made-up PMIDs, incl. traps (a readthrough whose evidence is about its partner gene, a pseudogene, an unresolved symbol) | synthesizer → report without retrieval: `python -m gencite test_data/dummy_records` |
-| `test_data/synth_bad/` | deliberately wrong claims | verifier test: `python -m gencite.verify test_data/synth_bad test_data/dummy_records` |
-
-### Evaluation against a baseline
-
-The baseline is the same LLM without retrieval: it writes claims from memory and cites PMIDs it remembers. The cited PMIDs are fetched from PubMed and checked by the same verifier and judge as `gencite`. The test set (`test_data/eval_genes.txt`, expected terms in `test_data/eval_expected.json`) has five well-described genes and three negative controls (two pseudogenes, one symbol that does not exist).
-
-```bash
-python -m gencite test_data/eval_genes.txt        # gencite  -> results/eval_genes/
-python -m gencite.baseline test_data/eval_genes.txt   # baseline -> results/eval_genes/baseline/
-python -m gencite.evaluate results/eval_genes         # -> results/eval_genes/evaluation.md (no API or LLM calls)
-```
-
-Clean up after testing: `rm -rf results/ data/cache/`.
 
 ## Project structure
 
