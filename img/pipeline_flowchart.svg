@@ -183,9 +183,9 @@
      id="retrieve"
      inkscape:label="Retrieve evidence">
     <rect
-       x="200.0"
+       x="160.0"
        y="430"
-       width="600"
+       width="680"
        height="140"
        rx="10"
        style="fill:#F6F8FB;stroke:#4A6FA5;stroke-width:2"
@@ -199,82 +199,109 @@
        id="src_0"
        inkscape:label="PubMed">
       <rect
-         x="215.0"
+         x="172.0"
          y="472"
-         width="180"
+         width="156"
          height="84"
          rx="10"
          style="fill:#E4F3E7;stroke:#3E8E55;stroke-width:2"
-         id="rect1116" />
+         id="src_0_box" />
       <text
-         x="305.0"
+         x="250.0"
          y="498"
-         style="font-family:'DejaVu Sans',Arial,sans-serif;font-size:14px;font-weight:bold;fill:#222;text-anchor:middle"
-         id="text1118">PubMed</text>
+         style="font-family:'DejaVu Sans',Arial,sans-serif;font-size:12px;font-weight:bold;fill:#222;text-anchor:middle"
+         id="src_0_name">PubMed</text>
       <text
-         x="305.0"
+         x="250.0"
          y="518"
          style="font-family:'DejaVu Sans',Arial,sans-serif;font-size:11.5px;font-weight:normal;fill:#444;text-anchor:middle"
-         id="text1120">top 5 abstracts</text>
+         id="src_0_line1">up to 5 abstracts</text>
       <text
-         x="305.0"
+         x="250.0"
          y="535"
          style="font-family:'DejaVu Sans',Arial,sans-serif;font-size:11.5px;font-weight:normal;fill:#444;text-anchor:middle"
-         id="text1122">NCBI E-utilities</text>
+         id="src_0_line2">NCBI E-utilities</text>
     </g>
     <g
        id="src_1"
        inkscape:label="Open Targets">
       <rect
-         x="410.0"
+         x="338.0"
          y="472"
-         width="180"
+         width="156"
          height="84"
          rx="10"
          style="fill:#E4F3E7;stroke:#3E8E55;stroke-width:2"
-         id="rect1125" />
+         id="src_1_box" />
       <text
-         x="500.0"
+         x="416.0"
          y="498"
-         style="font-family:'DejaVu Sans',Arial,sans-serif;font-size:14px;font-weight:bold;fill:#222;text-anchor:middle"
-         id="text1127">Open Targets</text>
+         style="font-family:'DejaVu Sans',Arial,sans-serif;font-size:12px;font-weight:bold;fill:#222;text-anchor:middle"
+         id="src_1_name">Open Targets</text>
       <text
-         x="500.0"
+         x="416.0"
          y="518"
          style="font-family:'DejaVu Sans',Arial,sans-serif;font-size:11.5px;font-weight:normal;fill:#444;text-anchor:middle"
-         id="text1129">biotype +</text>
+         id="src_1_line1">biotype +</text>
       <text
-         x="500.0"
+         x="416.0"
          y="535"
          style="font-family:'DejaVu Sans',Arial,sans-serif;font-size:11.5px;font-weight:normal;fill:#444;text-anchor:middle"
-         id="text1131">disease associations</text>
+         id="src_1_line2">disease associations</text>
     </g>
     <g
        id="src_2"
        inkscape:label="Human Protein Atlas">
       <rect
-         x="605.0"
+         x="504.0"
          y="472"
-         width="180"
+         width="156"
          height="84"
          rx="10"
          style="fill:#E4F3E7;stroke:#3E8E55;stroke-width:2"
-         id="rect1134" />
+         id="src_2_box" />
       <text
-         x="695.0"
+         x="582.0"
          y="498"
-         style="font-family:'DejaVu Sans',Arial,sans-serif;font-size:14px;font-weight:bold;fill:#222;text-anchor:middle"
-         id="text1136">Human Protein Atlas</text>
+         style="font-family:'DejaVu Sans',Arial,sans-serif;font-size:12px;font-weight:bold;fill:#222;text-anchor:middle"
+         id="src_2_name">Human Protein Atlas</text>
       <text
-         x="695.0"
+         x="582.0"
          y="518"
          style="font-family:'DejaVu Sans',Arial,sans-serif;font-size:11.5px;font-weight:normal;fill:#444;text-anchor:middle"
-         id="text1138">tissue / cell-type</text>
+         id="src_2_line1">tissue / cell-type</text>
       <text
-         x="695.0"
+         x="582.0"
          y="535"
          style="font-family:'DejaVu Sans',Arial,sans-serif;font-size:11.5px;font-weight:normal;fill:#444;text-anchor:middle"
-         id="text1140">expression, annotation</text>
+         id="src_2_line2">expression, annotation</text>
+    </g>
+    <g
+       id="src_3"
+       inkscape:label="AMASS">
+      <rect
+         x="670.0"
+         y="472"
+         width="156"
+         height="84"
+         rx="10"
+         style="fill:#E4F3E7;stroke:#3E8E55;stroke-width:2"
+         id="src_3_box" />
+      <text
+         x="748.0"
+         y="498"
+         style="font-family:'DejaVu Sans',Arial,sans-serif;font-size:12px;font-weight:bold;fill:#222;text-anchor:middle"
+         id="src_3_name">AMASS</text>
+      <text
+         x="748.0"
+         y="518"
+         style="font-family:'DejaVu Sans',Arial,sans-serif;font-size:11.5px;font-weight:normal;fill:#444;text-anchor:middle"
+         id="src_3_line1">GeneCore summaries,</text>
+      <text
+         x="748.0"
+         y="535"
+         style="font-family:'DejaVu Sans',Arial,sans-serif;font-size:11.5px;font-weight:normal;fill:#444;text-anchor:middle"
+         id="src_3_line2">BiomedCore papers</text>
     </g>
   </g>
   <path
@@ -306,7 +333,7 @@
        x="500.0"
        y="673"
        style="font-family:'DejaVu Sans',Arial,sans-serif;font-size:12.5px;font-weight:normal;fill:#444;text-anchor:middle"
-       id="text1152">PMID:…  ·  OT:…  ·  HPA:…</text>
+       id="text1152">PMID:…  ·  OT:…  ·  HPA:…  ·  AMASS:…</text>
   </g>
   <g
      id="f_records"
