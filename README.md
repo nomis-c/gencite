@@ -1,4 +1,12 @@
-# gencite
+# Telos Circle AI Hackathon HACK_002: gencite
+
+## Introduction
+
+`gencite` is a command-line tool and web app that takes a list of candidate genes and adds context from PubMed, Open Targets, the Human Protein Atlas and AMASS. Every evidence item gets an ID, a language model writes short claims using only that evidence, and every claim must cite the IDs it rests on. Two checks follow: code verifies that every cited ID was retrieved for that gene, and a second LLM call rates each claim against its cited evidence as supported, partial or unsupported. Genes without usable evidence get no claims instead of guesses.
+
+This was built for the Telos Circle AI Hackathon HACK_002: *Signal From Tomorrow* (26–27 September 2026).
+
+Special thanks to [LuciaAhcin](https://github.com/LuciaAhcin) for contributing to this project, and to Telos Circle for organizing the event.
 
 ## Background
 
@@ -86,7 +94,7 @@ Typical baseline examples:
 
 The `partial` verdicts of `gencite` in a run on the 15-gene list are small overstatements that are easy to miss when reading quickly, e.g. KHDRBS2 "in prostate cancer cell lines" where the paper used one cell line, or TMEM220 "promoter methylation" where the paper says gene methylation.
 
-Retrieval uses live APIs, so numbers can shift slightly between runs; report them together with the date and the models used. To reproduce them:
+Retrieval uses live APIs, so numbers can shift slightly between runs; report them together with the date and the models used. The numbers above use `deepseek-reasoner` as judge, which is not the default: set `JUDGE_MODEL=deepseek-reasoner` in `.env` first (see [Configuration](#configuration)). Then run:
 
 ```bash
 python -m gencite test_data/eval_genes.txt              # gencite  -> results/eval_genes/
@@ -116,7 +124,7 @@ python -m gencite.evaluate results/eval_genes           # -> results/eval_genes/
 - An API key for an OpenAI-compatible LLM endpoint (DeepSeek, Groq, Gemini, OpenAI, a local Ollama server, …)
 - Optional: an AMASS API key for the AMASS evidence source
 
-All package versions are pinned, so a fresh install matches the tested setup.
+The direct dependencies are pinned to the tested versions; pip resolves their sub-dependencies at install time.
 
 Python packages (`requirement.txt`):
 
@@ -133,10 +141,12 @@ Python packages (`requirement.txt`):
 ```bash
 git clone https://github.com/nomis-c/gencite.git
 cd gencite
-python3 -m venv .venv
+python3 -m venv .venv              # Windows: python -m venv .venv
 source .venv/bin/activate          # Windows PowerShell: .venv\Scripts\Activate.ps1
 pip install -r requirement.txt
 ```
+
+The virtual environment keeps the pinned versions separate from other Python packages on your machine. Activate it again in every new terminal before running `gencite`. On Ubuntu/Debian (also WSL), `python3 -m venv` needs the `python3-venv` package: `sudo apt install python3-venv`.
 
 ## Configuration
 

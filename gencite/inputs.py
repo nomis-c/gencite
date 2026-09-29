@@ -20,10 +20,13 @@ HEADER_WORDS = {
 
 
 def is_header(line: str) -> bool:
+    """True if the line is a column name such as "Gene" or "Symbol", not a gene."""
     return line.strip().lower().replace(" ", "_").replace("-", "_") in HEADER_WORDS
 
 
 def parse_gene_list(text: str) -> list[str]:
+    """One symbol per line -> symbols in input order. Blank lines, # comments,
+    a header on the first line and duplicates are dropped."""
     genes = []
     first = True
 

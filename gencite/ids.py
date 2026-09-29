@@ -1,3 +1,9 @@
+"""Step 2: gene symbol -> Ensembl ID, Entrez ID and gene type via MyGene.info.
+
+An unknown symbol is not an error: it comes back with found=False, and the later steps
+skip retrieval and the LLM for it (evidence level "none").
+"""
+
 import time
 
 import requests

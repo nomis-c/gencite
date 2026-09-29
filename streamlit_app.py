@@ -174,10 +174,12 @@ def html_block(parts: list[str]) -> None:
 
 
 def anchor(symbol: str) -> str:
+    """HTML id of a gene card, safe for symbols like LINC02210-CRHR1."""
     return "gene-" + re.sub(r"[^A-Za-z0-9]+", "-", symbol)
 
 
 def plural(n: int, word: str) -> str:
+    """ "1 gene", "3 genes"."""
     return f"{n} {word}{'' if n == 1 else 's'}"
 
 
@@ -187,6 +189,7 @@ def source_group(source: str) -> str:
 
 
 def seg(verdict: str) -> str:
+    """One coloured block for one claim, with its verdict as tooltip."""
     label, meaning = VERDICTS[verdict]
     return f'<span class="gc-seg {verdict}" ' f'title="{label}: {meaning}"></span>'
 
@@ -346,6 +349,7 @@ def run_analysis(
 
 
 def summary_sentence(records: list[GeneRecord], analysis: dict) -> str:
+    """One sentence above the results: number of claims per verdict and genes without claims."""
     verified = [analysis["verified_by_gene"].get(r.gene.symbol) for r in records]
     genes = plural(len(records), "gene")
     if not analysis["llm_configured"]:
@@ -380,6 +384,7 @@ def summary_sentence(records: list[GeneRecord], analysis: dict) -> str:
 
 
 def render_tracks(records: list[GeneRecord], analysis: dict) -> None:
+    """Overview: one row per gene, one coloured block per claim, linked to the gene card."""
     legend = "".join(f"<span>{seg(v)}{VERDICTS[v][0]}</span>" for v in VERDICTS)
     rows = []
     for r in records:
@@ -414,6 +419,7 @@ def render_tracks(records: list[GeneRecord], analysis: dict) -> None:
 
 
 def render_claims(verified, record: GeneRecord, only_review: bool) -> None:
+    """Claims of one gene with status, verifier reason and source links (only_review: hide supported)."""
     by_id = {e.id: e for e in record.evidence}
     claims = [c for c in verified.claims if not only_review or c.verdict != "supported"]
     rows = []
@@ -449,6 +455,7 @@ def render_claims(verified, record: GeneRecord, only_review: bool) -> None:
 
 
 def render_evidence(record: GeneRecord, verified) -> None:
+    """All retrieved evidence of one gene, each marked with the claims that cite it."""
     cited_by = {}
     for i, c in enumerate(verified.claims if verified else [], 1):
         for eid in c.evidence_ids:
@@ -482,6 +489,7 @@ def render_evidence(record: GeneRecord, verified) -> None:
 
 
 def render_gene(record: GeneRecord, analysis: dict, only_review: bool) -> None:
+    """Card of one gene: header (type, IDs, evidence level, note), claims, retrieval warnings, evidence."""
     g = record.gene
     verified = analysis["verified_by_gene"].get(g.symbol)
     name = analysis["gene_names"].get(g.symbol)

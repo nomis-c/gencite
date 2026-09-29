@@ -23,6 +23,7 @@ stats = {"hits": 0, "misses": 0}
 
 
 def _path(kind: str, request: dict) -> Path:
+    """Cache file of one request: kind + SHA-256 of the request as sorted JSON."""
     blob = json.dumps(request, sort_keys=True, ensure_ascii=False)
     return CACHE_DIR / f"{kind}_{hashlib.sha256(blob.encode()).hexdigest()[:32]}.json"
 
@@ -46,6 +47,7 @@ def get(kind: str, request: dict):
 
 
 def put(kind: str, request: dict, value) -> None:
+    """Store a successful result next to its request."""
     if not ENABLED:
         return
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
@@ -78,6 +80,7 @@ class CachedResponse:
 
 
 def _public(params: dict | None) -> dict:
+    """Request parameters without secrets, so API keys never reach the cache."""
     return {k: v for k, v in (params or {}).items() if k.lower() not in SECRET_PARAMS}
 
 
@@ -114,6 +117,7 @@ def cached_post(url: str, json: dict | None = None, **kwargs):
 
 
 def main() -> None:
+    """python -m gencite.cache: number and size of cache files; --clear deletes them."""
     files = list(CACHE_DIR.glob("*.json")) if CACHE_DIR.exists() else []
     if "--clear" in sys.argv:
         for f in files:

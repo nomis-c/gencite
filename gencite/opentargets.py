@@ -1,3 +1,9 @@
+"""Step 4: Open Targets evidence for one gene: gene biotype and the top disease associations.
+
+One GraphQL request per gene (by Ensembl ID). Evidence IDs: "OT:target:<ENSG>" and
+"OT:disease:<ENSG>:<disease ID>".
+"""
+
 import requests
 
 OPENTARGETS_URL = "https://api.platform.opentargets.org/api/v4/graphql"
@@ -6,6 +12,10 @@ OPENTARGETS_URL = "https://api.platform.opentargets.org/api/v4/graphql"
 def retrieve_open_targets_evidence(
     ensembl_id: str, max_diseases: int = 5
 ) -> list[dict]:
+    """Biotype + top disease associations of one gene (by Ensembl ID) as evidence items.
+
+    Unknown Ensembl ID -> empty list. GraphQL errors (returned with HTTP 200) raise RuntimeError.
+    """
 
     query = """
     query TargetInfo($ensemblId: String!, $maxDiseases: Int!) {

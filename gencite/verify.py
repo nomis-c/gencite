@@ -27,10 +27,13 @@ Output JSON only:
 {"verdict": "supported|partial|unsupported", "reason": "one short sentence"}"""
 
 
+# Start of the reason when a judge call failed; judge_failures() counts these claims
 JUDGE_FAILED = "Judge failed: "
 
 
 class Judgement(BaseModel):
+    """What the judge LLM must return for one claim."""
+
     verdict: Literal["supported", "partial", "unsupported"]
     reason: str
 
@@ -47,6 +50,7 @@ def check_ids(claim: Claim, evidence_ids: set[str]) -> list[str]:
 
 
 def build_prompt(claim: Claim, record: GeneRecord, cited: list[Evidence]) -> str:
+    """Judge prompt: the gene, the claim and only the evidence the claim cites."""
     g = record.gene
     lines = [
         "GENE:",
@@ -69,6 +73,7 @@ def build_prompt(claim: Claim, record: GeneRecord, cited: list[Evidence]) -> str
 
 
 def judge_claim(claim: Claim, record: GeneRecord, cited: list[Evidence]) -> Judgement:
+    """Layer 2 for one claim (cached like every LLM call)."""
     return llm_json(build_prompt(claim, record, cited), SYSTEM, Judgement, role="judge")
 
 
@@ -124,10 +129,12 @@ def verify(
 
 
 def judge_failures(res: VerifyResult) -> int:
+    """Number of claims whose judge call failed (unchecked, retried on a rerun)."""
     return sum(c.reason.startswith(JUDGE_FAILED) for c in res.claims)
 
 
 def main() -> None:
+    """python -m gencite.verify: run only the verifier on saved SynthResults + GeneRecords."""
     ap = argparse.ArgumentParser(
         description="Verifier: layer 1 (cited IDs exist) + layer 2 (LLM judge)"
     )

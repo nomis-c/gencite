@@ -1,3 +1,11 @@
+"""Step 3: PubMed evidence (titles + abstracts) for one gene via NCBI E-utilities.
+
+Preferred: papers NCBI itself links to the gene (GeneRIF first, then all Gene -> PubMed links).
+Fallback, only if there are none: a text search on symbol/name, filtered locally so that
+ambiguous acronyms (e.g. LCT = long-chain triglycerides) do not get through.
+Every paper becomes one evidence item with the ID "PMID:<number>".
+"""
+
 import re
 import xml.etree.ElementTree as ET
 

@@ -1,3 +1,10 @@
+"""Evidence record per gene: runs all selected retrieval sources and merges their items.
+
+Each source is independent: if one fails, its error is recorded and the others still run.
+Duplicates are removed (same evidence ID, or the same paper from PubMed and AMASS BiomedCore).
+The returned dict matches schema.GeneRecord (plus errors and counts for the CLI and web UI).
+"""
+
 from gencite.pubmed_retrieval import retrieve_pubmed_evidence
 from gencite.opentargets import retrieve_open_targets_evidence
 from gencite.hpa_retrieval import retrieve_hpa_evidence
