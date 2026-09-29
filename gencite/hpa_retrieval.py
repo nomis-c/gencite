@@ -1,3 +1,9 @@
+"""Step 5: Human Protein Atlas evidence for one gene: tissue and cell-type expression, annotation.
+
+One JSON request per gene (by Ensembl ID). A gene without an HPA entry (e.g. most pseudogenes)
+simply gets no HPA evidence. Evidence IDs: "HPA:tissue|celltype|annotation:<ENSG>".
+"""
+
 import requests
 
 HPA_BASE_URL = "https://www.proteinatlas.org"

@@ -27,12 +27,15 @@ Output JSON only:
 
 
 class LLMOutput(BaseModel):
+    """What the LLM must return; SynthResult adds the gene symbol. max_length=6 allows one extra claim."""
+
     evidence_level: EvidenceLevel
     note: str = ""
     claims: list[Claim] = Field(default_factory=list, max_length=6)
 
 
 def build_prompt(record: GeneRecord) -> str:
+    """User prompt: gene symbol and type, then every evidence item as [ID], title, text."""
     g = record.gene
     lines = [
         "GENE:",
@@ -73,6 +76,7 @@ def synthesize(record: GeneRecord) -> SynthResult:
 
 
 def load_records(paths: list[Path]) -> list[GeneRecord]:
+    """GeneRecords from JSON files and/or folders of JSON files (sorted by file name)."""
     files = []
     for p in paths:
         files += sorted(p.glob("*.json")) if p.is_dir() else [p]
@@ -82,6 +86,7 @@ def load_records(paths: list[Path]) -> list[GeneRecord]:
 
 
 def main() -> None:
+    """python -m gencite.synth_LLM: run only the synthesizer on saved GeneRecords."""
     ap = argparse.ArgumentParser(
         description="LLM synthesizer: evidence -> cited claims"
     )

@@ -20,7 +20,8 @@ from gencite.verify import judge_failures, verify
 
 
 def fetch_records(gene_file: Path) -> list[GeneRecord]:
-    """Steps 1-5: parse the list, resolve IDs, collect PubMed + Open Targets evidence."""
+    """Steps 1-5: parse the list, resolve IDs, collect evidence from all sources.
+    A gene whose retrieval fails is reported and skipped, the others go on."""
     try:  # imported here so the records-folder mode works without the retrieval modules
         from gencite.collect_evidence import collect_evidence
         from gencite.ids import resolve_gene_id
@@ -55,18 +56,20 @@ def fetch_records(gene_file: Path) -> list[GeneRecord]:
 
 
 def run_gene(record: GeneRecord, use_judge: bool) -> tuple[SynthResult, VerifyResult]:
-    """Steps 6-8 for one gene."""
+    """Steps 6-8 for one gene: synthesizer, verifier layer 1 and (unless use_judge is False) layer 2."""
     synth = synthesize(record)
     return synth, verify(synth, record, use_llm=use_judge)
 
 
 def _save(folder: Path, name: str, obj) -> None:
+    """Write one pipeline object (pydantic model) as <folder>/<name>.json."""
     folder.mkdir(parents=True, exist_ok=True)
     (folder / f"{name}.json").write_text(
         obj.model_dump_json(indent=2), encoding="utf-8"
     )
 
 
+# Everything a run writes into its output folder (see clear_run_folder)
 STAGE_OUTPUTS = ("records", "synth", "verified", "report.md")
 
 
@@ -81,6 +84,7 @@ def clear_run_folder(out: Path, keep: Path) -> None:
 
 
 def main() -> None:
+    """Parse the arguments and run the whole pipeline. Exit code 1 if a gene or a judge call failed."""
     ap = argparse.ArgumentParser(
         description="gencite: cited, verified gene summaries from a gene list"
     )

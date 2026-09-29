@@ -41,10 +41,12 @@ STAGES = ("synth", "records", "verified")
 
 
 def build_prompt(symbol: str) -> str:
+    """The baseline gets only the gene symbol, no evidence."""
     return f"GENE:\n{symbol}"
 
 
 def synthesize_baseline(symbol: str) -> SynthResult:
+    """Claims from the LLM's memory, in the same format as the synthesizer's."""
     out = llm_json(build_prompt(symbol), SYSTEM, LLMOutput, role="synth")
     if out.evidence_level == "none":
         out.claims = []
@@ -68,6 +70,7 @@ def fetch_cited(synth: SynthResult) -> GeneRecord:
 
 
 def _save(folder: Path, name: str, obj) -> None:
+    """Write one pipeline object (pydantic model) as <folder>/<name>.json."""
     folder.mkdir(parents=True, exist_ok=True)
     (folder / f"{name}.json").write_text(
         obj.model_dump_json(indent=2), encoding="utf-8"
@@ -75,6 +78,7 @@ def _save(folder: Path, name: str, obj) -> None:
 
 
 def main() -> None:
+    """Baseline run: LLM from memory -> fetch the cited PMIDs -> same verifier as gencite."""
     ap = argparse.ArgumentParser(
         description="Baseline: same LLM without retrieval, cited PMIDs checked afterwards"
     )

@@ -8,6 +8,7 @@ from pathlib import Path
 from gencite.schema import GeneRecord, VerifyResult
 from gencite.synth_LLM import load_records
 
+# One-character mark per verdict, used in the report and the terminal
 MARK = {
     "supported": "+",
     "partial": "~",
@@ -24,6 +25,7 @@ DISCLAIMER = (
 
 
 def counts(res: VerifyResult) -> dict[str, int]:
+    """Number of claims per verdict for one gene."""
     return {v: sum(c.verdict == v for c in res.claims) for v in ORDER}
 
 
@@ -33,11 +35,13 @@ def _cell(text: str) -> str:
 
 
 def _link(eid: str, record: GeneRecord | None) -> str:
+    """Evidence ID as a Markdown link to its source; plain code if the ID is unknown (invalid_id)."""
     e = next((e for e in record.evidence if e.id == eid), None) if record else None
     return f"[{eid}]({e.url})" if e and e.url else f"`{eid}`"
 
 
 def gene_section(res: VerifyResult, record: GeneRecord | None) -> str:
+    """One gene: header line, note, claims table and all retrieved evidence (cited or not)."""
     g = record.gene if record else None
     head = [f"## {res.gene}", ""]
     if g and not g.found:
@@ -85,6 +89,7 @@ def gene_section(res: VerifyResult, record: GeneRecord | None) -> str:
 
 
 def build_report(results: list[VerifyResult], records: dict[str, GeneRecord]) -> str:
+    """Whole report: title, disclaimer, summary table over all genes, one section per gene."""
     lines = [
         "# gencite report",
         "",
@@ -125,6 +130,7 @@ def build_report(results: list[VerifyResult], records: dict[str, GeneRecord]) ->
 
 
 def print_summary(results: list[VerifyResult]) -> None:
+    """Terminal summary: every claim with its mark, then the totals per verdict."""
     for r in results:
         print(f"\n{r.gene} [{r.evidence_level}]" + (f" {r.note}" if r.note else ""))
         for c in r.claims:
@@ -138,6 +144,7 @@ def print_summary(results: list[VerifyResult]) -> None:
 
 
 def main() -> None:
+    """python -m gencite.create_report: build the report from saved VerifyResults + GeneRecords."""
     ap = argparse.ArgumentParser(
         description="Gene report: verified claims + linked sources -> Markdown"
     )

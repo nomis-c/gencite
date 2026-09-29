@@ -1,3 +1,11 @@
+"""Optional source: AMASS GeneCore (gene summary, metadata, UniProt protein function) and
+BiomedCore (up to a few relevant publications). Needs AMASS_API_KEY in .env.
+
+GeneCore is looked up by Ensembl ID first, then by symbol. BiomedCore is supplementary:
+if it times out or fails, the GeneCore evidence is still kept.
+Evidence IDs: "AMASS:gene|metadata|protein|biomed:<AMASS ID>".
+"""
+
 import os
 import re
 

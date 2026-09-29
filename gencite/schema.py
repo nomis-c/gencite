@@ -14,6 +14,8 @@ EvidenceLevel = Literal["sufficient", "limited", "none"]
 
 
 class GeneInfo(BaseModel):
+    """Resolved IDs of one gene (step 2). found=False: symbol unknown, nothing is retrieved."""
+
     symbol: str
     ensembl_id: Optional[str] = None
     entrez_id: Optional[str] = None
@@ -22,6 +24,8 @@ class GeneInfo(BaseModel):
 
 
 class Evidence(BaseModel):
+    """One retrieved item. Claims cite its id, the report links its url."""
+
     id: str  # PMID:12345678 | OT:function:IRGM | OT:disease:IRGM:MONDO_...
     source: EvidenceSource
     title: str = ""
@@ -40,6 +44,8 @@ class GeneRecord(BaseModel):
 
 
 class Claim(BaseModel):
+    """One short statement about the gene, with the evidence IDs it is based on."""
+
     text: str
     evidence_ids: list[str] = Field(
         min_length=1
@@ -61,6 +67,8 @@ Verdict = Literal[
 
 
 class ClaimCheck(BaseModel):
+    """A claim plus the verifier's result."""
+
     text: str
     evidence_ids: list[str]
     invalid_ids: list[str] = Field(

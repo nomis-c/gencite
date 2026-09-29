@@ -18,10 +18,12 @@ load_dotenv()
 
 
 class LLMOutputError(Exception):
-    pass
+    """Any LLM failure (no key, API error, rate limit, invalid JSON): the only error callers catch."""
 
 
 def _config(role: str) -> dict:
+    """Endpoint, model and key for one role from .env; the judge falls back to LLM_* per value."""
+
     def env(name, default=None):
         if role == "judge" and os.getenv(f"JUDGE_{name}"):
             return os.getenv(f"JUDGE_{name}")
@@ -69,6 +71,7 @@ def chat(
 
 
 def _extract_json(raw: str) -> str:
+    """The JSON text of an answer, without the ```json fences some models add."""
     raw = raw.strip()
     m = re.search(
         r"```(?:json)?\s*(.*?)```", raw, re.S

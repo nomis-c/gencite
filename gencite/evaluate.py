@@ -25,6 +25,7 @@ SYSTEMS = {
 
 
 def load_system(folder: Path) -> tuple[dict[str, VerifyResult], dict[str, GeneRecord]]:
+    """VerifyResults and GeneRecords of one system (gencite or baseline), keyed by gene."""
     verified = {}
     for f in sorted((folder / "verified").glob("*.json")):
         res = VerifyResult.model_validate_json(f.read_text(encoding="utf-8"))
@@ -38,6 +39,7 @@ def load_system(folder: Path) -> tuple[dict[str, VerifyResult], dict[str, GeneRe
 
 
 def mentions(symbol: str, text: str) -> bool:
+    """True if the text names the symbol as a whole word (ERAP2 does not match ERAP20)."""
     return (
         re.search(rf"(?<![A-Za-z0-9]){re.escape(symbol)}(?![A-Za-z0-9])", text, re.I)
         is not None
@@ -59,6 +61,7 @@ def pmid_stats(res: VerifyResult, record: GeneRecord | None) -> dict[str, int]:
 def evaluate(
     verified: dict[str, VerifyResult], records: dict[str, GeneRecord], expected: dict
 ) -> dict:
+    """Metrics of one system: verdicts, cited PMIDs, expected terms (clear genes), honesty (negative controls)."""
     claims = [c for g in expected if g in verified for c in verified[g].claims]
     m = {
         "genes": sum(g in verified for g in expected),
@@ -92,6 +95,7 @@ def evaluate(
 def failures(
     verified: dict[str, VerifyResult], expected: dict
 ) -> list[tuple[str, str, str, str]]:
+    """Claims judged partial, unsupported or invalid_id, as (gene, verdict, claim, reason)."""
     return [
         (g, c.verdict, c.text, c.reason)
         for g in expected
@@ -102,12 +106,14 @@ def failures(
 
 
 def _pct(n: int, total: int) -> str:
+    """ "84% (16/19)", or "–" if there is nothing to count."""
     return f"{100 * n / total:.0f}% ({n}/{total})" if total else "–"
 
 
 def build_markdown(
     metrics: dict[str, dict], fails: dict[str, list], expected: dict
 ) -> str:
+    """evaluation.md: metrics side by side, result per gene, failure cases of each system."""
     names = list(metrics)
     rows = [
         ("Genes evaluated", lambda m: str(m["genes"])),
@@ -198,6 +204,7 @@ def build_markdown(
 
 
 def main() -> None:
+    """Evaluate every system found in the run folder, write evaluation.md and evaluation.json."""
     ap = argparse.ArgumentParser(
         description="Compare a gencite run with the baseline on the test set"
     )
